@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Hand Gesture Bluetooth Controller - Zikri-Fadhil-Aban</title>
+
+    <!-- TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+
+    <!-- Teachable Machine -->
+    <script
+        src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0b1220;
+            color: white;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            padding: 30px 20px;
+        }
+
+        /* HEADER */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            margin-bottom: 8px;
+            font-size: 36px;
+        }
+
+        .author {
+            color: #55a2ff;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .subtitle {
+            color: #9caec8;
+            font-size: 16px;
+        }
+
+        /* DESCRIPTION */
+        .description {
+            background: #121c2e;
+            border: 1px solid #263753;
+            border-radius: 18px;
+            padding: 25px;
+            margin-bottom: 20px;
+            line-height: 1.8;
+            color: #d5dfef;
+        }
+
+        .description h2 {
+            margin-top: 0;
+            color: white;
+        }
+
+        .description p {
+            margin-bottom: 0;
+        }
+
+        .card {
+            background: #121c2e;
+            border: 1px solid #263753;
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            margin-top: 0;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px;
+            border-radius: 10px;
+            border: 1px solid #344968;
+            background: #091221;
+            color: white;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #4285f4;
+        }
+
+        button {
+            padding: 13px 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            background: #2f7df6;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .btn-green {
+            background: #20a66a;
+        }
+
+        .btn-red {
+            background: #d94b5c;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 15px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            background: #1d2a40;
+            color: #bcd0ec;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            background: #e0a900;
+            border-radius: 50%;
+        }
+
+        .dot.green {
+            background: #28c982;
+        }
+
+        .dot.red {
+            background: #e05260;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .camera {
+            text-align: center;
+        }
+
+        #webcam-container canvas {
+            width: 100%;
+            max-width: 480px;
+            border-radius: 15px;
+            background: black;
+        }
+
+        .gesture {
+            margin-top: 20px;
+            background: #091221;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .gesture-name {
+            font-size: 42px;
+            font-weight: bold;
+            color: #55a2ff;
+        }
+
+        .confidence {
+            margin-top: 10px;
+            color: #9caec8;
+        }
+
+        .progress {
+            height: 10px;
+            background: #293851;
+            border-radius: 10px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #2f7df6;
+            transition: width 0.2s;
+        }
+
+        .bluetooth-box {
+            text-align: center;
+            padding: 25px;
+        }
+
+        .bluetooth-icon {
+            font-size: 70px;
+            margin-bottom: 10px;
+        }
+
+        .command-display {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .command {
+            font-size: 30px;
+            font-weight: bold;
+            color: #48d597;
+        }
+
+        .info {
+            color: #9caec8;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* FOOTER */
+        .footer {
+            text-align: center;
+            color: #71819a;
+            font-size: 13px;
+            padding: 15px;
+        }
+
+        @media(max-width: 750px) {
+
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            .header h1 {
+                font-size: 28px;
+            }
+
+            .description {
+                text-align: justify;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- HEADER -->
+        <div class="header">
+
+            <h1> Hand Gesture Controller</h1>
+
+            <div class="author">
+                Zikri-Fadhil-Aban
+            </div>
+
+            <div class="subtitle">
+                Teachable Machine → Camera → Bluetooth → micro:bit
+            </div>
+
+        </div>
+
+
+        <!-- DESKRIPSI PROJECT -->
+        <div class="description">
+
+            <h2>📖 Deskripsi Project</h2>
+
+            <p>
+                Proyek Sistem Pengenalan Isyarat Tangan
+                (<i>Hand Gesture Recognition</i>) ini bertujuan
+                mengembangkan model <i>Machine Learning</i> dan
+                visi komputer yang mampu mendeteksi, melacak,
+                dan mengklasifikasikan gerakan tangan manusia
+                secara <i>real-time</i>.
+            </p>
+
+            <p>
+                Dengan mengekstraksi titik acuan tangan
+                (<i>hand landmarks</i>) melalui tangkapan kamera
+                standar, sistem ini secara presisi menerjemahkan
+                gestur fisik menjadi perintah digital tanpa
+                memerlukan perangkat fisik atau layar sentuh.
+            </p>
+
+            <p>
+                Proyek ini membuka peluang inovasi interaksi
+                manusia-komputer yang lebih intuitif dan higienis
+                (<i>touchless</i>), dengan potensi implementasi
+                yang luas mencakup pengendalian perangkat rumah
+                pintar (<i>smart home</i>), navigasi presentasi
+                nirkabel, interaksi <i>Virtual Reality</i> (VR),
+                hingga teknologi asisten penerjemah bahasa isyarat.
+            </p>
+
+        </div>
+
+
+        <!-- TEACHABLE MACHINE -->
+        <div class="card">
+
+            <h2>1. 🤖 Teachable Machine</h2>
+
+            <p class="info">
+                Paste link model Teachable Machine kamu di bawah.
+            </p>
+
+            <div class="input-group">
+
+                <input id="modelUrl" type="text" placeholder="Paste link Teachable Machine di sini...">
+
+                <button onclick="loadModel()">
+                    Load Model
+                </button>
+
+            </div>
+
+            <div id="modelStatus" class="status">
+
+                <span class="dot"></span>
+
+                Model belum dimuat
+
+            </div>
+
+        </div>
+
+
+        <!-- CAMERA + BLUETOOTH -->
+        <div class="main-grid">
+
+            <!-- CAMERA -->
+            <div class="card camera">
+
+                <h2>📷 Camera</h2>
+
+                <div id="webcam-container">
+
+                    <p class="info">
+                        Kamera belum aktif
+                    </p>
+
+                </div>
+
+                <br>
+
+                <button class="btn-green" onclick="startCamera()">
+                    ▶ Start Camera
+                </button>
+
+                <div class="gesture">
+
+                    <div class="info">
+                        Gesture Terdeteksi
+                    </div>
+
+                    <div id="gestureName" class="gesture-name">
+                        ---
+                    </div>
+
+                    <div class="confidence">
+
+                        Confidence:
+                        <b id="confidence">
+                            0%
+                        </b>
+
+                    </div>
+
+                    <div class="progress">
+
+                        <div id="confidenceBar" class="progress-bar">
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- BLUETOOTH -->
+            <div class="card">
+
+                <div class="bluetooth-box">
+
+                    <div class="bluetooth-icon">
+                        🔵
+                    </div>
+
+                    <h2>micro:bit Bluetooth</h2>
+
+                    <div id="bluetoothStatus" class="status">
+
+                        <span class="dot"></span>
+
+                        Belum terhubung
+
+                    </div>
+
+                    <br><br>
+
+                    <button onclick="connectBluetooth()">
+                        🔵 Connect micro:bit
+                    </button>
+
+                    <button class="btn-red" onclick="disconnectBluetooth()">
+                        Disconnect
+                    </button>
+
+                    <p class="info">
+
+                        Gunakan Chrome atau Edge.
+                        <br>
+
+                        micro:bit harus menjalankan
+                        Bluetooth UART Service.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- COMMAND -->
+        <div class="card">
+
+            <h2>🤖 Robot Command</h2>
+
+            <div class="command-display">
+
+                <div class="info">
+                    Command terakhir
+                </div>
+
+                <div id="lastCommand" class="command">
+                    ---
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- FOOTER -->
+        <div class="footer">
+
+            Hand Gesture Bluetooth Controller
+            <br>
+
+            Developed by <b>Muhamad Rizal Akmal</b>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        /* ==============================
+           GLOBAL VARIABLE
+        ============================== */
+
+        let model = null;
+
+        let webcam = null;
+
+        let cameraRunning = false;
+
+        let bluetoothDevice = null;
+
+        let uartCharacteristic = null;
+
+        let lastCommand = "";
+
+        let lastCommandTime = 0;
+
+
+        /* ==============================
+           MICRO:BIT UART UUID
+        ============================== */
+
+        const UART_SERVICE =
+            "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+
+        const UART_TX =
+            "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+
+        const UART_RX =
+            "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+
+
+        /* ==============================
+           STATUS
+        ============================== */
+
+        function setStatus(
+            elementId,
+            text,
+            type = ""
+        ) {
+
+            const element =
+                document.getElementById(elementId);
+
+            let dotClass = "";
+
+            if (type === "success") {
+                dotClass = "green";
+            }
+
+            if (type === "error") {
+                dotClass = "red";
+            }
+
+            element.innerHTML = `
+                <span class="dot ${dotClass}"></span>
+                ${text}
+            `;
+        }
+
+
+        /* ==============================
+           LOAD MODEL
+        ============================== */
+
+        async function loadModel() {
+
+            const input =
+                document.getElementById("modelUrl");
+
+            let url =
+                input.value.trim();
+
+            if (!url) {
+
+                alert(
+                    "Masukkan link Teachable Machine terlebih dahulu."
+                );
+
+                return;
+            }
+
+            if (
+                !url.includes(
+                    "teachablemachine.withgoogle.com/models/"
+                )
+            ) {
+
+                alert(
+                    "Link harus berupa link model Teachable Machine."
+                );
+
+                return;
+            }
+
+            try {
+
+                setStatus(
+                    "modelStatus",
+                    "Memuat model..."
+                );
+
+                if (!url.endsWith("/")) {
+                    url += "/";
+                }
+
+                model =
+                    await tmImage.load(
+                        url + "model.json",
+                        url + "metadata.json"
+                    );
+
+                const classCount =
+                    model.getTotalClasses();
+
+                setStatus(
+                    "modelStatus",
+                    "Model siap - " +
+                    classCount +
+                    " gesture",
+                    "success"
+                );
+
+                console.log(
+                    "Jumlah class:",
+                    classCount
+                );
+
+            }
+
+            catch (error) {
+
+                console.error(error);
+
+                setStatus(
+                    "modelStatus",
+                    "Gagal memuat model",
+                    "error"
+                );
+
+                alert(
+                    "Model gagal dimuat.\n\n" +
+                    error.message
+                );
+            }
+        }
+
+
+        /* ==============================
+           START CAMERA
+        ============================== */
+
+        async function startCamera() {
+
+            if (!model) {
+
+                alert(
+                    "Load model Teachable Machine terlebih dahulu."
+                );
+
+                return;
+            }
+
+            if (webcam) {
+                return;
+            }
+
+            try {
+
+                webcam =
+                    new tmImage.Webcam(
+                        480,
+                        480,
+                        true
+                    );
+
+                await webcam.setup();
+
+                await webcam.play();
+
+                const container =
+                    document.getElementById(
+                        "webcam-container"
+                    );
+
+                container.innerHTML = "";
+
+                container.appendChild(
+                    webcam.canvas
+                );
+
+                cameraRunning = true;
+
+                requestAnimationFrame(
+                    predictionLoop
+                );
+
+            }
+
+            catch (error) {
+
+                console.error(error);
+
+                alert(
+                    "Kamera tidak dapat dibuka.\n\n" +
+                    "Pastikan browser memiliki izin kamera."
+                );
+            }
+        }
+
+
+        /* ==============================
+           PREDICTION LOOP
+        ============================== */
+
+        async function predictionLoop() {
+
+            if (!cameraRunning) {
+                return;
+            }
+
+            webcam.update();
+
+            await predict();
+
+            requestAnimationFrame(
+                predictionLoop
+            );
+        }
+
+
+        /* ==============================
+           MAPPING GESTURE
+        ============================== */
+
+        function getMappings() {
+
+            return [
+
+                {
+                    gesture: "maju",
+                    command: "MAJU"
+                },
+
+                {
+                    gesture: "mundur",
+                    command: "MUNDUR"
+                },
+
+                {
+                    gesture: "kiri",
+                    command: "KIRI"
+                },
+
+                {
+                    gesture: "kanan",
+                    command: "KANAN"
+                },
+
+                {
+                    gesture: "stop",
+                    command: "STOP"
+                }
+
+            ];
+        }
+
+
+        /* ==============================
+           PREDICTION
+        ============================== */
+
+        async function predict() {
+
+            if (!model || !webcam) {
+                return;
+            }
+
+            const predictions =
+                await model.predict(
+                    webcam.canvas
+                );
+
+            let bestPrediction =
+                predictions[0];
+
+            for (
+                const prediction
+                of predictions
+            ) {
+
+                if (
+                    prediction.probability >
+                    bestPrediction.probability
+                ) {
+
+                    bestPrediction =
+                        prediction;
+                }
+            }
+
+            const gestureName =
+                bestPrediction.className;
+
+            const probability =
+                bestPrediction.probability;
+
+            const percentage =
+                Math.round(
+                    probability * 100
+                );
+
+            document.getElementById(
+                "gestureName"
+            ).textContent =
+                gestureName;
+
+            document.getElementById(
+                "confidence"
+            ).textContent =
+                percentage + "%";
+
+            document.getElementById(
+                "confidenceBar"
+            ).style.width =
+                percentage + "%";
+
+
+            /* Confidence minimum 80% */
+
+            if (probability < 0.80) {
+                return;
+            }
+
+
+            const gesture =
+                gestureName
+                    .trim()
+                    .toLowerCase();
+
+
+            const mappings =
+                getMappings();
+
+
+            const mapping =
+                mappings.find(
+                    item =>
+                        item.gesture === gesture
+                );
+
+
+            const command =
+                mapping
+                    ? mapping.command
+                    : gesture.toUpperCase();
+
+
+            const now =
+                Date.now();
+
+
+            /* Rate limit command */
+
+            if (
+                command !== lastCommand ||
+                now - lastCommandTime > 700
+            ) {
+
+                lastCommand =
+                    command;
+
+                lastCommandTime =
+                    now;
+
+                sendCommand(
+                    command
+                );
+            }
+        }
+
+
+        /* ==============================
+           BLUETOOTH CONNECT
+        ============================== */
+
+        async function connectBluetooth() {
+
+            if (!navigator.bluetooth) {
+
+                alert(
+                    "Browser tidak mendukung Web Bluetooth.\n\n" +
+                    "Gunakan Google Chrome atau Microsoft Edge."
+                );
+
+                return;
+            }
+
+            try {
+
+                bluetoothDevice =
+                    await navigator.bluetooth.requestDevice({
+
+                        acceptAllDevices: true,
+
+                        optionalServices: [
+                            UART_SERVICE
+                        ]
+
+                    });
+
+
+                bluetoothDevice.addEventListener(
+                    "gattserverdisconnected",
+                    bluetoothDisconnected
+                );
+
+
+                const server =
+                    await bluetoothDevice
+                        .gatt
+                        .connect();
+
+
+                const service =
+                    await server
+                        .getPrimaryService(
+                            UART_SERVICE
+                        );
+
+
+                /*
+                    micro:bit UART RX
+                    digunakan untuk menerima
+                    command dari browser.
+                */
+
+                uartCharacteristic =
+                    await service
+                        .getCharacteristic(
+                            UART_RX
+                        );
+
+
+                setStatus(
+                    "bluetoothStatus",
+                    "Terhubung: " +
+                    (
+                        bluetoothDevice.name ||
+                        "micro:bit"
+                    ),
+                    "success"
+                );
+
+            }
+
+            catch (error) {
+
+                console.error(error);
+
+                setStatus(
+                    "bluetoothStatus",
+                    "Gagal terhubung",
+                    "error"
+                );
+
+            }
+        }
+
+
+        /* ==============================
+           BLUETOOTH DISCONNECTED
+        ============================== */
+
+        function bluetoothDisconnected() {
+
+            uartCharacteristic =
+                null;
+
+            setStatus(
+                "bluetoothStatus",
+                "Bluetooth terputus",
+                "error"
+            );
+        }
+
+
+        /* ==============================
+           SEND COMMAND
+        ============================== */
+
+        async function sendCommand(
+            command
+        ) {
+
+            document.getElementById(
+                "lastCommand"
+            ).textContent =
+                command;
+
+
+            /*
+                Jika Bluetooth belum connect,
+                command tetap ditampilkan.
+            */
+
+            if (!uartCharacteristic) {
+                return;
+            }
+
+            try {
+
+                /*
+                    Command yang dikirim:
+
+                    MAJU
+                    MUNDUR
+                    KIRI
+                    KANAN
+                    STOP
+                */
+
+                const message =
+                    command + "\n";
+
+
+                const data =
+                    new TextEncoder()
+                        .encode(message);
+
+
+                await uartCharacteristic
+                    .writeValue(data);
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    "ERROR Kirim:",
+                    error
+                );
+            }
+        }
+
+
+        /* ==============================
+           DISCONNECT
+        ============================== */
+
+        function disconnectBluetooth() {
+
+            try {
+
+                if (
+                    bluetoothDevice &&
+                    bluetoothDevice.gatt.connected
+                ) {
+
+                    bluetoothDevice
+                        .gatt
+                        .disconnect();
+                }
+
+            }
+
+            catch (error) {
+
+                console.error(error);
+            }
+
+
+            uartCharacteristic =
+                null;
+
+            bluetoothDevice =
+                null;
+
+
+            setStatus(
+                "bluetoothStatus",
+                "Belum terhubung"
+            );
+        }
+
+    </script>
+
+</body>
+
+</html>
