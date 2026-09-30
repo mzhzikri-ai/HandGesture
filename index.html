@@ -4,476 +4,388 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Hand Gesture Bluetooth Controller - Zikri-Fadhil-Aban</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 
     <!-- TensorFlow.js -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-
     <!-- Teachable Machine -->
-    <script
-        src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
     <style>
-        * {
-            box-sizing: border-box;
+        :root {
+            --bg: #eef1f5;
+            --panel: #ffffff;
+            --line: #d5dbe3;
+            --text: #151c26;
+            --muted: #5f6c7d;
+            --ink: #151c26;
+            --accent: #2f6fdb;
+            --ice: #8fd8ff;
+            --ok: #1f9d6b;
+            --bad: #d64556;
+            --warn: #c98f1a;
+            --radius: 6px;
         }
+
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            background: #0b1220;
-            color: white;
+            font-family: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .wrap {
+            max-width: 1040px;
+            margin: 0 auto;
+            padding: 0 24px;
         }
 
         .container {
-            max-width: 1100px;
-            margin: auto;
-            padding: 30px 20px;
+            max-width: 1040px;
+            margin: 0 auto;
+            padding: 40px 24px 32px;
         }
 
-        /* HEADER */
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
+        /* HERO (gelap) */
+        .hero {
+            background: var(--ink);
+            color: #e8edf2;
+            padding: 48px 0 40px;
         }
 
-        .header h1 {
-            margin-bottom: 8px;
-            font-size: 36px;
+        .hero h1 {
+            margin: 0 0 6px;
+            font-size: clamp(28px, 5vw, 44px);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            color: #ffffff;
         }
 
-        .author {
-            color: #55a2ff;
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
+        .author { color: var(--ice); font-weight: 500; }
+        .subtitle { color: #93a1b3; font-size: 15px; margin-top: 4px; }
 
-        .subtitle {
-            color: #9caec8;
-            font-size: 16px;
-        }
-
-        /* DESCRIPTION */
+        /* DESKRIPSI */
         .description {
-            background: #121c2e;
-            border: 1px solid #263753;
-            border-radius: 18px;
-            padding: 25px;
-            margin-bottom: 20px;
-            line-height: 1.8;
-            color: #d5dfef;
+            border-left: 2px solid var(--accent);
+            padding: 2px 0 2px 20px;
+            margin-bottom: 32px;
+            max-width: 72ch;
+            color: #3d4959;
+            font-size: 15px;
         }
+        .description h2 { margin: 0 0 8px; font-size: 16px; color: var(--text); }
+        .description p { margin: 0 0 10px; }
+        .description p:last-child { margin-bottom: 0; }
 
-        .description h2 {
-            margin-top: 0;
-            color: white;
-        }
-
-        .description p {
-            margin-bottom: 0;
-        }
-
+        /* PANEL */
         .card {
-            background: #121c2e;
-            border: 1px solid #263753;
-            border-radius: 18px;
-            padding: 20px;
-            margin-bottom: 20px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 22px;
         }
+        .card h2 { margin: 0 0 4px; font-size: 17px; font-weight: 700; }
+        .info { color: var(--muted); font-size: 13.5px; margin: 0; }
 
-        .card h2 {
-            margin-top: 0;
+        .card.dark {
+            background: var(--ink);
+            border-color: var(--ink);
+            color: #e8edf2;
         }
+        .card.dark .info { color: #93a1b3; }
 
-        .input-group {
-            display: flex;
-            gap: 10px;
-        }
+        .stack { display: grid; gap: 16px; }
+
+        .input-group { display: flex; gap: 10px; margin-top: 14px; }
 
         input {
-            width: 100%;
-            padding: 13px;
-            border-radius: 10px;
-            border: 1px solid #344968;
-            background: #091221;
-            color: white;
-            outline: none;
+            flex: 1;
+            min-width: 0;
+            padding: 12px 14px;
+            border-radius: var(--radius);
+            border: 1px solid var(--line);
+            background: #f6f8fa;
+            color: var(--text);
+            font: inherit;
+            font-size: 14px;
         }
-
-        input:focus {
-            border-color: #4285f4;
-        }
+        input::placeholder { color: #8b97a7; }
 
         button {
-            padding: 13px 18px;
-            border: none;
-            border-radius: 10px;
+            padding: 12px 18px;
+            border: 1px solid var(--ink);
+            border-radius: var(--radius);
+            background: transparent;
+            color: var(--ink);
+            font: inherit;
+            font-size: 14px;
+            font-weight: 500;
             cursor: pointer;
-            font-weight: bold;
-            background: #2f7df6;
-            color: white;
+            transition: background .15s, color .15s;
+        }
+        button:hover { background: var(--ink); color: #ffffff; }
+        .btn-quiet { border-color: var(--line); color: var(--muted); }
+        .btn-quiet:hover { background: var(--line); color: var(--text); }
+
+        input:focus-visible, button:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
         }
 
-        button:hover {
-            opacity: 0.9;
-        }
-
-        .btn-green {
-            background: #20a66a;
-        }
-
-        .btn-red {
-            background: #d94b5c;
-        }
-
+        /* STATUS */
         .status {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            margin-top: 15px;
-            padding: 8px 12px;
-            border-radius: 20px;
-            background: #1d2a40;
-            color: #bcd0ec;
+            margin-top: 14px;
+            font-size: 13.5px;
+            color: var(--muted);
         }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); flex: none; }
+        .dot.green { background: var(--ok); }
+        .dot.red { background: var(--bad); }
 
-        .dot {
-            width: 10px;
-            height: 10px;
-            background: #e0a900;
-            border-radius: 50%;
-        }
-
-        .dot.green {
-            background: #28c982;
-        }
-
-        .dot.red {
-            background: #e05260;
-        }
-
+        /* GRID */
         .main-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            grid-template-columns: 1.15fr 1fr;
+            gap: 16px;
         }
 
-        .camera {
-            text-align: center;
-        }
-
-        #webcam-container canvas {
-            width: 100%;
-            max-width: 480px;
-            border-radius: 15px;
-            background: black;
-        }
-
-        .gesture {
-            margin-top: 20px;
-            background: #091221;
-            border-radius: 15px;
-            padding: 25px;
-            text-align: center;
-        }
-
-        .gesture-name {
-            font-size: 42px;
-            font-weight: bold;
-            color: #55a2ff;
-        }
-
-        .confidence {
-            margin-top: 10px;
-            color: #9caec8;
-        }
-
-        .progress {
-            height: 10px;
-            background: #293851;
-            border-radius: 10px;
-            margin-top: 10px;
+        /* KAMERA */
+        .viewport {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            background: var(--ink);
+            border-radius: var(--radius);
             overflow: hidden;
+            display: grid;
+            place-items: center;
+            margin: 16px 0;
         }
+        .viewport .info { color: #93a1b3; }
+        .viewport::before, .viewport::after,
+        .viewport .c1, .viewport .c2 {
+            content: "";
+            position: absolute;
+            width: 22px; height: 22px;
+            border: 2px solid var(--ice);
+            pointer-events: none;
+            z-index: 2;
+        }
+        .viewport::before { top: 10px; left: 10px; border-right: 0; border-bottom: 0; }
+        .viewport::after { top: 10px; right: 10px; border-left: 0; border-bottom: 0; }
+        .viewport .c1 { bottom: 10px; left: 10px; border-right: 0; border-top: 0; }
+        .viewport .c2 { bottom: 10px; right: 10px; border-left: 0; border-top: 0; }
 
-        .progress-bar {
-            height: 100%;
-            width: 0%;
-            background: #2f7df6;
-            transition: width 0.2s;
-        }
+        #webcam-container { width: 100%; height: 100%; display: grid; place-items: center; }
+        #webcam-container canvas { width: 100% !important; height: 100% !important; object-fit: cover; }
 
-        .bluetooth-box {
-            text-align: center;
-            padding: 25px;
-        }
+        .cam-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 
-        .bluetooth-icon {
-            font-size: 70px;
-            margin-bottom: 10px;
-        }
+        /* GESTURE */
+        .readout { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+        .gesture-name { font-size: 34px; font-weight: 700; letter-spacing: -0.01em; word-break: break-word; }
+        .confidence { color: var(--muted); font-size: 14px; }
+        .confidence b { color: var(--text); font-weight: 500; }
+        .progress { height: 3px; background: var(--line); margin-top: 12px; }
+        .progress-bar { height: 100%; width: 0%; background: var(--accent); transition: width .2s; }
 
-        .command-display {
-            margin-top: 20px;
-            text-align: center;
+        /* D-PAD */
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 8px;
+            max-width: 240px;
+            margin: 18px auto 6px;
+            aspect-ratio: 1 / 1;
         }
+        .key {
+            display: grid;
+            place-items: center;
+            border: 1px solid #33404f;
+            border-radius: var(--radius);
+            color: #93a1b3;
+            font-size: 12px;
+            font-weight: 500;
+            transition: background .12s, color .12s, border-color .12s;
+        }
+        .key.active { background: var(--ice); border-color: var(--ice); color: var(--ink); }
+        .key.stop.active { background: var(--bad); border-color: var(--bad); color: #fff; }
+        .k-up { grid-area: 1 / 2; }
+        .k-left { grid-area: 2 / 1; }
+        .k-stop { grid-area: 2 / 2; }
+        .k-right { grid-area: 2 / 3; }
+        .k-down { grid-area: 3 / 2; }
 
-        .command {
-            font-size: 30px;
-            font-weight: bold;
-            color: #48d597;
-        }
+        .last { text-align: center; margin-top: 14px; }
+        .command { font-size: 22px; font-weight: 700; color: var(--ice); }
 
-        .info {
-            color: #9caec8;
-            font-size: 13px;
-            line-height: 1.6;
-        }
+        .bt-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
 
         /* FOOTER */
         .footer {
-            text-align: center;
-            color: #71819a;
+            border-top: 1px solid var(--line);
+            margin-top: 32px;
+            padding-top: 18px;
+            color: var(--muted);
             font-size: 13px;
-            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
-        @media(max-width: 750px) {
+        @media (max-width: 750px) {
+            .wrap { padding: 0 16px; }
+            .container { padding: 28px 16px 24px; }
+            .hero { padding: 36px 0 30px; }
+            .main-grid { grid-template-columns: 1fr; }
+            .input-group { flex-direction: column; }
+        }
 
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .input-group {
-                flex-direction: column;
-            }
-
-            .header h1 {
-                font-size: 28px;
-            }
-
-            .description {
-                text-align: justify;
-            }
+        @media (prefers-reduced-motion: reduce) {
+            * { transition: none !important; }
         }
     </style>
 </head>
 
 <body>
 
+    <!-- HEADER -->
+    <header class="hero">
+        <div class="wrap">
+            <h1>Hand Gesture Controller</h1>
+            <div class="author">Zikri-Fadhil-Aban</div>
+            <div class="subtitle">Teachable Machine, kamera, Bluetooth, lalu micro:bit</div>
+        </div>
+    </header>
+
     <div class="container">
 
-        <!-- HEADER -->
-        <div class="header">
-
-            <h1> Hand Gesture Controller</h1>
-
-            <div class="author">
-                Zikri-Fadhil-Aban
-            </div>
-
-            <div class="subtitle">
-                Teachable Machine → Camera → Bluetooth → micro:bit
-            </div>
-
-        </div>
-
-
         <!-- DESKRIPSI PROJECT -->
-        <div class="description">
-
-            <h2>📖 Deskripsi Project</h2>
-
+        <section class="description">
+            <h2>Deskripsi Project</h2>
             <p>
-                Proyek Sistem Pengenalan Isyarat Tangan
-                (<i>Hand Gesture Recognition</i>) ini bertujuan
-                mengembangkan model <i>Machine Learning</i> dan
-                visi komputer yang mampu mendeteksi, melacak,
-                dan mengklasifikasikan gerakan tangan manusia
-                secara <i>real-time</i>.
+                Proyek Sistem Pengenalan Isyarat Tangan (<i>Hand Gesture Recognition</i>) ini bertujuan
+                mengembangkan model <i>Machine Learning</i> dan visi komputer yang mampu mendeteksi, melacak,
+                dan mengklasifikasikan gerakan tangan manusia secara <i>real-time</i>.
             </p>
-
             <p>
-                Dengan mengekstraksi titik acuan tangan
-                (<i>hand landmarks</i>) melalui tangkapan kamera
-                standar, sistem ini secara presisi menerjemahkan
-                gestur fisik menjadi perintah digital tanpa
+                Dengan mengekstraksi titik acuan tangan (<i>hand landmarks</i>) melalui tangkapan kamera
+                standar, sistem ini secara presisi menerjemahkan gestur fisik menjadi perintah digital tanpa
                 memerlukan perangkat fisik atau layar sentuh.
             </p>
-
             <p>
-                Proyek ini membuka peluang inovasi interaksi
-                manusia-komputer yang lebih intuitif dan higienis
-                (<i>touchless</i>), dengan potensi implementasi
-                yang luas mencakup pengendalian perangkat rumah
-                pintar (<i>smart home</i>), navigasi presentasi
-                nirkabel, interaksi <i>Virtual Reality</i> (VR),
+                Proyek ini membuka peluang inovasi interaksi manusia-komputer yang lebih intuitif dan higienis
+                (<i>touchless</i>), dengan potensi implementasi yang luas mencakup pengendalian perangkat rumah
+                pintar (<i>smart home</i>), navigasi presentasi nirkabel, interaksi <i>Virtual Reality</i> (VR),
                 hingga teknologi asisten penerjemah bahasa isyarat.
             </p>
+        </section>
 
-        </div>
+        <div class="stack">
 
+            <!-- TEACHABLE MACHINE -->
+            <section class="card">
+                <h2>Model Teachable Machine</h2>
+                <p class="info">Paste link model Teachable Machine kamu di bawah.</p>
 
-        <!-- TEACHABLE MACHINE -->
-        <div class="card">
-
-            <h2>1. 🤖 Teachable Machine</h2>
-
-            <p class="info">
-                Paste link model Teachable Machine kamu di bawah.
-            </p>
-
-            <div class="input-group">
-
-                <input id="modelUrl" type="text" placeholder="Paste link Teachable Machine di sini...">
-
-                <button onclick="loadModel()">
-                    Load Model
-                </button>
-
-            </div>
-
-            <div id="modelStatus" class="status">
-
-                <span class="dot"></span>
-
-                Model belum dimuat
-
-            </div>
-
-        </div>
-
-
-        <!-- CAMERA + BLUETOOTH -->
-        <div class="main-grid">
-
-            <!-- CAMERA -->
-            <div class="card camera">
-
-                <h2>📷 Camera</h2>
-
-                <div id="webcam-container">
-
-                    <p class="info">
-                        Kamera belum aktif
-                    </p>
-
+                <div class="input-group">
+                    <input id="modelUrl" type="text" placeholder="https://teachablemachine.withgoogle.com/models/...">
+                    <button onclick="loadModel()">Load Model</button>
                 </div>
 
-                <br>
+                <div id="modelStatus" class="status">
+                    <span class="dot"></span>
+                    Model belum dimuat
+                </div>
+            </section>
 
-                <button class="btn-green" onclick="startCamera()">
-                    ▶ Start Camera
-                </button>
+            <!-- KAMERA + BLUETOOTH -->
+            <div class="main-grid">
 
-                <div class="gesture">
+                <!-- KAMERA -->
+                <section class="card">
+                    <h2>Kamera</h2>
 
-                    <div class="info">
-                        Gesture Terdeteksi
+                    <div class="viewport">
+                        <span class="c1"></span><span class="c2"></span>
+                        <div id="webcam-container">
+                            <p class="info">Kamera belum aktif</p>
+                        </div>
                     </div>
 
-                    <div id="gestureName" class="gesture-name">
-                        ---
+                    <div class="cam-actions">
+                        <button onclick="startCamera()">Start Camera</button>
+                        <span class="info">Gesture terdeteksi</span>
                     </div>
 
-                    <div class="confidence">
-
-                        Confidence:
-                        <b id="confidence">
-                            0%
-                        </b>
-
+                    <div style="margin-top:18px">
+                        <div class="readout">
+                            <div id="gestureName" class="gesture-name">---</div>
+                            <div class="confidence">Confidence <b id="confidence">0%</b></div>
+                        </div>
+                        <div class="progress">
+                            <div id="confidenceBar" class="progress-bar"></div>
+                        </div>
                     </div>
+                </section>
 
-                    <div class="progress">
+                <!-- COMMAND + BLUETOOTH -->
+                <div class="stack" style="align-content:start">
 
-                        <div id="confidenceBar" class="progress-bar">
+                    <section class="card dark">
+                        <h2>Robot Command</h2>
+                        <div class="dpad" aria-hidden="true">
+                            <div class="key k-up" data-cmd="MAJU">Maju</div>
+                            <div class="key k-left" data-cmd="KIRI">Kiri</div>
+                            <div class="key k-stop stop" data-cmd="STOP">Stop</div>
+                            <div class="key k-right" data-cmd="KANAN">Kanan</div>
+                            <div class="key k-down" data-cmd="MUNDUR">Mundur</div>
+                        </div>
+                        <div class="last">
+                            <div class="info">Command terakhir</div>
+                            <div id="lastCommand" class="command">---</div>
+                        </div>
+                    </section>
+
+                    <section class="card">
+                        <h2>micro:bit Bluetooth</h2>
+
+                        <div id="bluetoothStatus" class="status">
+                            <span class="dot"></span>
+                            Belum terhubung
                         </div>
 
-                    </div>
+                        <div class="bt-actions">
+                            <button onclick="connectBluetooth()">Connect micro:bit</button>
+                            <button class="btn-quiet" onclick="disconnectBluetooth()">Disconnect</button>
+                        </div>
+
+                        <p class="info" style="margin-top:14px">
+                            Gunakan Chrome atau Edge. micro:bit harus menjalankan Bluetooth UART Service.
+                        </p>
+                    </section>
 
                 </div>
-
             </div>
-
-
-            <!-- BLUETOOTH -->
-            <div class="card">
-
-                <div class="bluetooth-box">
-
-                    <div class="bluetooth-icon">
-                        🔵
-                    </div>
-
-                    <h2>micro:bit Bluetooth</h2>
-
-                    <div id="bluetoothStatus" class="status">
-
-                        <span class="dot"></span>
-
-                        Belum terhubung
-
-                    </div>
-
-                    <br><br>
-
-                    <button onclick="connectBluetooth()">
-                        🔵 Connect micro:bit
-                    </button>
-
-                    <button class="btn-red" onclick="disconnectBluetooth()">
-                        Disconnect
-                    </button>
-
-                    <p class="info">
-
-                        Gunakan Chrome atau Edge.
-                        <br>
-
-                        micro:bit harus menjalankan
-                        Bluetooth UART Service.
-
-                    </p>
-
-                </div>
-
-            </div>
-
         </div>
-
-
-        <!-- COMMAND -->
-        <div class="card">
-
-            <h2>🤖 Robot Command</h2>
-
-            <div class="command-display">
-
-                <div class="info">
-                    Command terakhir
-                </div>
-
-                <div id="lastCommand" class="command">
-                    ---
-                </div>
-
-            </div>
-
-        </div>
-
 
         <!-- FOOTER -->
-        <div class="footer">
-
-            Hand Gesture Bluetooth Controller
-            <br>
-
-            Developed by <b>Muhamad Rizal Akmal</b>
-
-        </div>
+        <footer class="footer">
+            <span>Hand Gesture Bluetooth Controller</span>
+            <span>Developed by <b>Muhamad Rizal Akmal</b></span>
+        </footer>
 
     </div>
 
@@ -485,17 +397,11 @@
         ============================== */
 
         let model = null;
-
         let webcam = null;
-
         let cameraRunning = false;
-
         let bluetoothDevice = null;
-
         let uartCharacteristic = null;
-
         let lastCommand = "";
-
         let lastCommandTime = 0;
 
 
@@ -503,38 +409,22 @@
            MICRO:BIT UART UUID
         ============================== */
 
-        const UART_SERVICE =
-            "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-
-        const UART_TX =
-            "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
-
-        const UART_RX =
-            "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+        const UART_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+        const UART_TX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+        const UART_RX = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
 
 
         /* ==============================
            STATUS
         ============================== */
 
-        function setStatus(
-            elementId,
-            text,
-            type = ""
-        ) {
+        function setStatus(elementId, text, type = "") {
 
-            const element =
-                document.getElementById(elementId);
+            const element = document.getElementById(elementId);
 
             let dotClass = "";
-
-            if (type === "success") {
-                dotClass = "green";
-            }
-
-            if (type === "error") {
-                dotClass = "red";
-            }
+            if (type === "success") dotClass = "green";
+            if (type === "error") dotClass = "red";
 
             element.innerHTML = `
                 <span class="dot ${dotClass}"></span>
@@ -544,88 +434,65 @@
 
 
         /* ==============================
+           HIGHLIGHT D-PAD
+        ============================== */
+
+        function highlightKey(command) {
+            document.querySelectorAll(".key").forEach(key => {
+                key.classList.toggle("active", key.dataset.cmd === command);
+            });
+        }
+
+
+        /* ==============================
            LOAD MODEL
         ============================== */
 
         async function loadModel() {
 
-            const input =
-                document.getElementById("modelUrl");
-
-            let url =
-                input.value.trim();
+            const input = document.getElementById("modelUrl");
+            let url = input.value.trim();
 
             if (!url) {
-
-                alert(
-                    "Masukkan link Teachable Machine terlebih dahulu."
-                );
-
+                alert("Masukkan link Teachable Machine terlebih dahulu.");
                 return;
             }
 
-            if (
-                !url.includes(
-                    "teachablemachine.withgoogle.com/models/"
-                )
-            ) {
-
-                alert(
-                    "Link harus berupa link model Teachable Machine."
-                );
-
+            if (!url.includes("teachablemachine.withgoogle.com/models/")) {
+                alert("Link harus berupa link model Teachable Machine.");
                 return;
             }
 
             try {
 
-                setStatus(
-                    "modelStatus",
-                    "Memuat model..."
-                );
+                setStatus("modelStatus", "Memuat model...");
 
                 if (!url.endsWith("/")) {
                     url += "/";
                 }
 
-                model =
-                    await tmImage.load(
-                        url + "model.json",
-                        url + "metadata.json"
-                    );
+                model = await tmImage.load(
+                    url + "model.json",
+                    url + "metadata.json"
+                );
 
-                const classCount =
-                    model.getTotalClasses();
+                const classCount = model.getTotalClasses();
 
                 setStatus(
                     "modelStatus",
-                    "Model siap - " +
-                    classCount +
-                    " gesture",
+                    "Model siap - " + classCount + " gesture",
                     "success"
                 );
 
-                console.log(
-                    "Jumlah class:",
-                    classCount
-                );
+                console.log("Jumlah class:", classCount);
 
-            }
-
-            catch (error) {
+            } catch (error) {
 
                 console.error(error);
 
-                setStatus(
-                    "modelStatus",
-                    "Gagal memuat model",
-                    "error"
-                );
+                setStatus("modelStatus", "Gagal memuat model", "error");
 
-                alert(
-                    "Model gagal dimuat.\n\n" +
-                    error.message
-                );
+                alert("Model gagal dimuat.\n\n" + error.message);
             }
         }
 
@@ -637,11 +504,7 @@
         async function startCamera() {
 
             if (!model) {
-
-                alert(
-                    "Load model Teachable Machine terlebih dahulu."
-                );
-
+                alert("Load model Teachable Machine terlebih dahulu.");
                 return;
             }
 
@@ -651,37 +514,21 @@
 
             try {
 
-                webcam =
-                    new tmImage.Webcam(
-                        480,
-                        480,
-                        true
-                    );
+                webcam = new tmImage.Webcam(480, 480, true);
 
                 await webcam.setup();
-
                 await webcam.play();
 
-                const container =
-                    document.getElementById(
-                        "webcam-container"
-                    );
+                const container = document.getElementById("webcam-container");
 
                 container.innerHTML = "";
-
-                container.appendChild(
-                    webcam.canvas
-                );
+                container.appendChild(webcam.canvas);
 
                 cameraRunning = true;
 
-                requestAnimationFrame(
-                    predictionLoop
-                );
+                requestAnimationFrame(predictionLoop);
 
-            }
-
-            catch (error) {
+            } catch (error) {
 
                 console.error(error);
 
@@ -707,9 +554,7 @@
 
             await predict();
 
-            requestAnimationFrame(
-                predictionLoop
-            );
+            requestAnimationFrame(predictionLoop);
         }
 
 
@@ -720,32 +565,11 @@
         function getMappings() {
 
             return [
-
-                {
-                    gesture: "maju",
-                    command: "MAJU"
-                },
-
-                {
-                    gesture: "mundur",
-                    command: "MUNDUR"
-                },
-
-                {
-                    gesture: "kiri",
-                    command: "KIRI"
-                },
-
-                {
-                    gesture: "kanan",
-                    command: "KANAN"
-                },
-
-                {
-                    gesture: "stop",
-                    command: "STOP"
-                }
-
+                { gesture: "maju", command: "MAJU" },
+                { gesture: "mundur", command: "MUNDUR" },
+                { gesture: "kiri", command: "KIRI" },
+                { gesture: "kanan", command: "KANAN" },
+                { gesture: "stop", command: "STOP" }
             ];
         }
 
@@ -760,54 +584,23 @@
                 return;
             }
 
-            const predictions =
-                await model.predict(
-                    webcam.canvas
-                );
+            const predictions = await model.predict(webcam.canvas);
 
-            let bestPrediction =
-                predictions[0];
+            let bestPrediction = predictions[0];
 
-            for (
-                const prediction
-                of predictions
-            ) {
-
-                if (
-                    prediction.probability >
-                    bestPrediction.probability
-                ) {
-
-                    bestPrediction =
-                        prediction;
+            for (const prediction of predictions) {
+                if (prediction.probability > bestPrediction.probability) {
+                    bestPrediction = prediction;
                 }
             }
 
-            const gestureName =
-                bestPrediction.className;
+            const gestureName = bestPrediction.className;
+            const probability = bestPrediction.probability;
+            const percentage = Math.round(probability * 100);
 
-            const probability =
-                bestPrediction.probability;
-
-            const percentage =
-                Math.round(
-                    probability * 100
-                );
-
-            document.getElementById(
-                "gestureName"
-            ).textContent =
-                gestureName;
-
-            document.getElementById(
-                "confidence"
-            ).textContent =
-                percentage + "%";
-
-            document.getElementById(
-                "confidenceBar"
-            ).style.width =
-                percentage + "%";
+            document.getElementById("gestureName").textContent = gestureName;
+            document.getElementById("confidence").textContent = percentage + "%";
+            document.getElementById("confidenceBar").style.width = percentage + "%";
 
 
             /* Confidence minimum 80% */
@@ -817,49 +610,23 @@
             }
 
 
-            const gesture =
-                gestureName
-                    .trim()
-                    .toLowerCase();
+            const gesture = gestureName.trim().toLowerCase();
 
+            const mapping = getMappings().find(item => item.gesture === gesture);
 
-            const mappings =
-                getMappings();
+            const command = mapping ? mapping.command : gesture.toUpperCase();
 
-
-            const mapping =
-                mappings.find(
-                    item =>
-                        item.gesture === gesture
-                );
-
-
-            const command =
-                mapping
-                    ? mapping.command
-                    : gesture.toUpperCase();
-
-
-            const now =
-                Date.now();
+            const now = Date.now();
 
 
             /* Rate limit command */
 
-            if (
-                command !== lastCommand ||
-                now - lastCommandTime > 700
-            ) {
+            if (command !== lastCommand || now - lastCommandTime > 700) {
 
-                lastCommand =
-                    command;
+                lastCommand = command;
+                lastCommandTime = now;
 
-                lastCommandTime =
-                    now;
-
-                sendCommand(
-                    command
-                );
+                sendCommand(command);
             }
         }
 
@@ -871,47 +638,28 @@
         async function connectBluetooth() {
 
             if (!navigator.bluetooth) {
-
                 alert(
                     "Browser tidak mendukung Web Bluetooth.\n\n" +
                     "Gunakan Google Chrome atau Microsoft Edge."
                 );
-
                 return;
             }
 
             try {
 
-                bluetoothDevice =
-                    await navigator.bluetooth.requestDevice({
-
-                        acceptAllDevices: true,
-
-                        optionalServices: [
-                            UART_SERVICE
-                        ]
-
-                    });
-
+                bluetoothDevice = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: [UART_SERVICE]
+                });
 
                 bluetoothDevice.addEventListener(
                     "gattserverdisconnected",
                     bluetoothDisconnected
                 );
 
+                const server = await bluetoothDevice.gatt.connect();
 
-                const server =
-                    await bluetoothDevice
-                        .gatt
-                        .connect();
-
-
-                const service =
-                    await server
-                        .getPrimaryService(
-                            UART_SERVICE
-                        );
-
+                const service = await server.getPrimaryService(UART_SERVICE);
 
                 /*
                     micro:bit UART RX
@@ -919,35 +667,19 @@
                     command dari browser.
                 */
 
-                uartCharacteristic =
-                    await service
-                        .getCharacteristic(
-                            UART_RX
-                        );
-
+                uartCharacteristic = await service.getCharacteristic(UART_RX);
 
                 setStatus(
                     "bluetoothStatus",
-                    "Terhubung: " +
-                    (
-                        bluetoothDevice.name ||
-                        "micro:bit"
-                    ),
+                    "Terhubung: " + (bluetoothDevice.name || "micro:bit"),
                     "success"
                 );
 
-            }
-
-            catch (error) {
+            } catch (error) {
 
                 console.error(error);
 
-                setStatus(
-                    "bluetoothStatus",
-                    "Gagal terhubung",
-                    "error"
-                );
-
+                setStatus("bluetoothStatus", "Gagal terhubung", "error");
             }
         }
 
@@ -958,14 +690,9 @@
 
         function bluetoothDisconnected() {
 
-            uartCharacteristic =
-                null;
+            uartCharacteristic = null;
 
-            setStatus(
-                "bluetoothStatus",
-                "Bluetooth terputus",
-                "error"
-            );
+            setStatus("bluetoothStatus", "Bluetooth terputus", "error");
         }
 
 
@@ -973,14 +700,11 @@
            SEND COMMAND
         ============================== */
 
-        async function sendCommand(
-            command
-        ) {
+        async function sendCommand(command) {
 
-            document.getElementById(
-                "lastCommand"
-            ).textContent =
-                command;
+            document.getElementById("lastCommand").textContent = command;
+
+            highlightKey(command);
 
 
             /*
@@ -996,34 +720,18 @@
 
                 /*
                     Command yang dikirim:
-
-                    MAJU
-                    MUNDUR
-                    KIRI
-                    KANAN
-                    STOP
+                    MAJU, MUNDUR, KIRI, KANAN, STOP
                 */
 
-                const message =
-                    command + "\n";
+                const message = command + "\n";
 
+                const data = new TextEncoder().encode(message);
 
-                const data =
-                    new TextEncoder()
-                        .encode(message);
+                await uartCharacteristic.writeValue(data);
 
+            } catch (error) {
 
-                await uartCharacteristic
-                    .writeValue(data);
-
-            }
-
-            catch (error) {
-
-                console.error(
-                    "ERROR Kirim:",
-                    error
-                );
+                console.error("ERROR Kirim:", error);
             }
         }
 
@@ -1036,35 +744,19 @@
 
             try {
 
-                if (
-                    bluetoothDevice &&
-                    bluetoothDevice.gatt.connected
-                ) {
-
-                    bluetoothDevice
-                        .gatt
-                        .disconnect();
+                if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+                    bluetoothDevice.gatt.disconnect();
                 }
 
-            }
-
-            catch (error) {
+            } catch (error) {
 
                 console.error(error);
             }
 
+            uartCharacteristic = null;
+            bluetoothDevice = null;
 
-            uartCharacteristic =
-                null;
-
-            bluetoothDevice =
-                null;
-
-
-            setStatus(
-                "bluetoothStatus",
-                "Belum terhubung"
-            );
+            setStatus("bluetoothStatus", "Belum terhubung");
         }
 
     </script>
