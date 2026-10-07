@@ -4,11 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hand Gesture Bluetooth Controller - Zikri-Fadhil-Aban</title>
+    <title>Hand Gesture Bluetooth Controller</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Newsreader:ital,wght@0,400;0,500;1,400&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
 
     <!-- TensorFlow.js -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
@@ -16,378 +16,695 @@
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
     <style>
+        /* Layout: header sticky dengan empat widget navigasi. Setiap widget membuka halaman sendiri (Beranda, Model, Kamera, Bluetooth). Dock kaca di bawah menampilkan sinyal live di halaman mana pun kecuali Kamera. */
         :root {
-            --bg: #eef1f5;
-            --panel: #ffffff;
-            --line: #d5dbe3;
-            --text: #151c26;
-            --muted: #5f6c7d;
-            --ink: #151c26;
-            --accent: #2f6fdb;
-            --ice: #8fd8ff;
-            --ok: #1f9d6b;
-            --bad: #d64556;
-            --warn: #c98f1a;
-            --radius: 6px;
+            --bg: #f2f6f8;
+            --surface: #ffffff;
+            --ink: #0e1a2b;
+            --muted: #62727f;
+            --line: #dfe7ec;
+            --accent: #0b7b86;
+            --accent-soft: #e2f1f3;
+            --ok: #2a9d6f;
+            --bad: #d14b5e;
+            --warn: #c08a1e;
+
+            --display: "Sora", "Manrope", system-ui, sans-serif;
+            --text: "Newsreader", Georgia, "Times New Roman", serif;
+            --body: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+            --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+            --radius: 14px;
+            --shadow: none;
+            color-scheme: light;
         }
 
         * { box-sizing: border-box; }
+        [hidden] { display: none !important; }
 
         body {
             margin: 0;
-            font-family: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
-            background: var(--bg);
-            color: var(--text);
+            font-family: var(--body);
+            color: var(--ink);
             line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            background: var(--bg);
         }
 
-        .wrap {
-            max-width: 1040px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
+        .wrap { max-width: 1180px; margin: 0 auto; padding-inline: 24px; }
 
-        .container {
-            max-width: 1040px;
-            margin: 0 auto;
-            padding: 40px 24px 32px;
+        /* ===== ANIMASI ===== */
+        @keyframes pop {
+            0%   { opacity: 0; transform: translateY(18px) scale(.96); }
+            60%  { opacity: 1; transform: translateY(-2px) scale(1.01); }
+            100% { opacity: 1; transform: none; }
         }
+        @keyframes bump {
+            0%   { transform: scale(.92); opacity: .4; }
+            60%  { transform: scale(1.04); opacity: 1; }
+            100% { transform: none; }
+        }
+        @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 
-        /* HERO (gelap) */
-        .hero {
+        .pop { animation: pop .65s cubic-bezier(.2, .8, .3, 1) both; animation-delay: var(--d, 0s); }
+        .bump { animation: bump .35s cubic-bezier(.2, .8, .3, 1); }
+
+        /* ===== HEADER ===== */
+        .header {
+            position: sticky; top: 0; z-index: 30;
+            background: var(--bg);
+            border-bottom: 1px solid var(--line);
+        }
+        .header-inner {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 20px; padding-block: 12px;
+        }
+        .brand { display: flex; align-items: center; gap: 12px; cursor: pointer; background: none; border: 0; padding: 0; color: inherit; font: inherit; }
+        .mark {
+            width: 38px; height: 38px; border-radius: 12px;
             background: var(--ink);
-            color: #e8edf2;
-            padding: 48px 0 40px;
+            display: grid; place-items: center;
+            position: relative;
         }
+        .mark svg { width: 20px; height: 20px; stroke: #fff; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+        .brand-text { text-align: left; line-height: 1.2; }
+        .brand-text b { display: block; font-family: var(--display); font-weight: 700; font-size: 15px; letter-spacing: -.01em; }
+        .brand-text span { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 
-        .hero h1 {
-            margin: 0 0 6px;
-            font-size: clamp(28px, 5vw, 44px);
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            line-height: 1.1;
-            color: #ffffff;
-        }
-
-        .author { color: var(--ice); font-weight: 500; }
-        .subtitle { color: #93a1b3; font-size: 15px; margin-top: 4px; }
-
-        /* DESKRIPSI */
-        .description {
-            border-left: 2px solid var(--accent);
-            padding: 2px 0 2px 20px;
-            margin-bottom: 32px;
-            max-width: 72ch;
-            color: #3d4959;
-            font-size: 15px;
-        }
-        .description h2 { margin: 0 0 8px; font-size: 16px; color: var(--text); }
-        .description p { margin: 0 0 10px; }
-        .description p:last-child { margin-bottom: 0; }
-
-        /* PANEL */
-        .card {
-            background: var(--panel);
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            padding: 22px;
-        }
-        .card h2 { margin: 0 0 4px; font-size: 17px; font-weight: 700; }
-        .info { color: var(--muted); font-size: 13.5px; margin: 0; }
-
-        .card.dark {
-            background: var(--ink);
-            border-color: var(--ink);
-            color: #e8edf2;
-        }
-        .card.dark .info { color: #93a1b3; }
-
-        .stack { display: grid; gap: 16px; }
-
-        .input-group { display: flex; gap: 10px; margin-top: 14px; }
-
-        input {
-            flex: 1;
-            min-width: 0;
-            padding: 12px 14px;
-            border-radius: var(--radius);
-            border: 1px solid var(--line);
-            background: #f6f8fa;
-            color: var(--text);
-            font: inherit;
-            font-size: 14px;
-        }
-        input::placeholder { color: #8b97a7; }
-
-        button {
-            padding: 12px 18px;
-            border: 1px solid var(--ink);
-            border-radius: var(--radius);
+        .nav { display: flex; gap: 6px; }
+        .nav-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 14px;
+            border: 1px solid transparent;
+            border-radius: 14px;
             background: transparent;
             color: var(--ink);
             font: inherit;
-            font-size: 14px;
-            font-weight: 500;
             cursor: pointer;
-            transition: background .15s, color .15s;
+            text-align: left;
+            transition: background .18s, border-color .18s, transform .12s;
         }
-        button:hover { background: var(--ink); color: #ffffff; }
-        .btn-quiet { border-color: var(--line); color: var(--muted); }
-        .btn-quiet:hover { background: var(--line); color: var(--text); }
+        .nav-item:hover { background: rgba(14, 26, 43, .04); }
+        .nav-item:active { transform: scale(.97); }
+        .nav-item.active { background: transparent; color: var(--accent); }
+        .nav-ico { display: grid; place-items: center; flex: none; }
+        .nav-ico svg { width: 18px; height: 18px; stroke: var(--ink); fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+        .nav-item.active .nav-ico svg { stroke: var(--accent); }
+        .nav-txt { display: flex; align-items: center; gap: 8px; line-height: 1.25; }
+        .nav-label { font-size: 13.5px; font-weight: 600; }
+        .nav-sub { display: flex; align-items: center; }
+        .nav-sub span[data-chip], .nav-sub.js-command { display: none; }
 
-        input:focus-visible, button:focus-visible {
-            outline: 2px solid var(--accent);
-            outline-offset: 2px;
-        }
-
-        /* STATUS */
-        .status {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 14px;
-            font-size: 13.5px;
-            color: var(--muted);
-        }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); flex: none; }
+        .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--warn); flex: none; transition: background .25s; }
         .dot.green { background: var(--ok); }
         .dot.red { background: var(--bad); }
 
-        /* GRID */
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1.15fr 1fr;
-            gap: 16px;
-        }
+        :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-        /* KAMERA */
-        .viewport {
+        /* ===== HALAMAN ===== */
+        main { padding-block: 40px 120px; }
+        .view-head { margin-bottom: 28px; max-width: 62ch; }
+        .eyebrow {
+            display: inline-flex; align-items: center; gap: 10px;
+            font-family: var(--mono); font-size: 11.5px; font-weight: 500;
+            letter-spacing: .14em; text-transform: uppercase; color: var(--accent);
+        }
+        .eyebrow::before { content: ""; width: 18px; height: 1px; background: var(--accent); }
+        .view-head h2 {
+            margin: 10px 0 8px;
+            font-family: var(--display); font-weight: 700;
+            font-size: clamp(30px, 5vw, 44px); line-height: 1.1; letter-spacing: -.03em;
+            text-wrap: balance;
+        }
+        .view-head p { margin: 0; color: var(--muted); font-family: var(--text); font-size: 18px; line-height: 1.6; }
+
+        .two {
+            display: grid;
+            grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+            gap: 20px; align-items: start;
+        }
+        .two.even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+        .stack { display: grid; gap: 20px; min-width: 0; }
+
+        /* ===== KARTU ===== */
+        .card {
             position: relative;
-            aspect-ratio: 1 / 1;
-            background: var(--ink);
+            background: var(--surface);
+            border: 1px solid var(--line);
             border-radius: var(--radius);
-            overflow: hidden;
-            display: grid;
-            place-items: center;
-            margin: 16px 0;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            min-width: 0;
         }
-        .viewport .info { color: #93a1b3; }
-        .viewport::before, .viewport::after,
-        .viewport .c1, .viewport .c2 {
-            content: "";
-            position: absolute;
-            width: 22px; height: 22px;
-            border: 2px solid var(--ice);
-            pointer-events: none;
-            z-index: 2;
-        }
-        .viewport::before { top: 10px; left: 10px; border-right: 0; border-bottom: 0; }
-        .viewport::after { top: 10px; right: 10px; border-left: 0; border-bottom: 0; }
-        .viewport .c1 { bottom: 10px; left: 10px; border-right: 0; border-top: 0; }
-        .viewport .c2 { bottom: 10px; right: 10px; border-left: 0; border-top: 0; }
+        .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+        .card h3 { margin: 0; font-family: var(--display); font-weight: 700; font-size: 16px; letter-spacing: -.01em; }
+        .tag { display: none; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+        .info { color: var(--muted); font-size: 13.5px; margin: 0; }
 
-        #webcam-container { width: 100%; height: 100%; display: grid; place-items: center; }
+        /* ===== BERANDA ===== */
+        .hero { margin-bottom: 40px; padding-top: 12px; max-width: 760px; }
+        .hero h1 {
+            margin: 14px 0 14px;
+            font-family: var(--display); font-weight: 700;
+            font-size: clamp(40px, 7vw, 76px); line-height: 1.02; letter-spacing: -.04em;
+            text-wrap: balance;
+        }
+        .hero h1 em { font-style: normal; font-weight: 800; color: var(--accent); }
+        .author { font-weight: 700; font-size: 15px; }
+        .subtitle { color: var(--muted); font-family: var(--text); font-size: 18px; margin-top: 4px; }
+        .cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 26px; }
+
+        .desc-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
+        .desc-grid p { margin: 0; color: #2b3a4a; font-family: var(--text); font-size: 17px; line-height: 1.75; font-weight: 400; }
+        .desc-grid p i { font-style: italic; }
+
+        /* ===== TOMBOL & INPUT ===== */
+        button.btn {
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--ink);
+            background: var(--ink);
+            color: #fff;
+            font: inherit; font-size: 14px; font-weight: 600;
+            cursor: pointer; white-space: nowrap;
+            transition: transform .12s, background .18s, border-color .18s, color .18s;
+        }
+        button.btn:hover { transform: translateY(-1px); }
+        button.btn:active { transform: scale(.97); }
+        button.btn.accent { background: var(--accent); border-color: var(--accent); }
+        button.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+        button.btn.ghost:hover { border-color: var(--ink); }
+
+        .input-group { display: flex; gap: 10px; }
+        input {
+            flex: 1; min-width: 0;
+            padding: 13px 14px; border-radius: 12px;
+            border: 1px solid var(--line); background: #f8fafb; color: var(--ink);
+            font: inherit; font-size: 14px;
+            transition: border-color .15s, background .15s;
+        }
+        input::placeholder { color: #9aa8b3; }
+        input:focus { outline: none; border-color: var(--accent); background: #fff; }
+
+        .status {
+            display: inline-flex; align-items: center; gap: 8px;
+            margin-top: 14px; padding: 7px 13px;
+            border-radius: 999px; background: var(--bg);
+            font-family: var(--mono); font-size: 12px; color: var(--muted);
+        }
+
+        /* ===== TABEL PEMETAAN ===== */
+        .map { display: grid; gap: 8px; }
+        .map-row {
+            display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 14px;
+            padding: 11px 14px; border-radius: 12px; background: #f8fafb; border: 1px solid transparent;
+            font-size: 14px;
+        }
+        .map-row .g { font-weight: 600; text-transform: capitalize; }
+        .map-row .c { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+        .map-row .m { font-family: var(--mono); font-size: 11px; color: var(--muted); min-width: 64px; text-align: right; }
+        .map-row.found { border-color: rgba(42, 157, 111, .35); }
+        .map-row.found .m { color: var(--ok); }
+        .map-row.missing .m { color: var(--bad); }
+        .extra { margin-top: 14px; font-size: 12.5px; color: var(--muted); }
+
+        /* ===== KAMERA ===== */
+        .viewport {
+            position: relative; aspect-ratio: 1 / 1; max-width: 100%;
+            border-radius: 14px; background: var(--accent-soft);
+            overflow: hidden; display: grid; place-items: center;
+        }
+        .live-badge {
+            display: none; position: absolute; top: 16px; left: 50%; transform: translateX(-50%); z-index: 4;
+            align-items: center; gap: 8px; padding: 4px 12px; border-radius: 999px;
+            background: rgba(255, 255, 255, .85); font-family: var(--mono); font-size: 11px; letter-spacing: .12em;
+        }
+        .live-badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--bad); animation: pulse 1.2s infinite; }
+        .viewport.live .live-badge { display: inline-flex; }
+
+        #webcam-container { width: 100%; height: 100%; display: grid; place-items: center; text-align: center; }
         #webcam-container canvas { width: 100% !important; height: 100% !important; object-fit: cover; }
+        .placeholder { display: grid; gap: 10px; justify-items: center; color: var(--accent); }
+        .placeholder svg { width: 46px; height: 46px; stroke: currentColor; fill: none; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; opacity: .7; }
+        .placeholder .info { color: var(--accent); }
+        .cam-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
 
-        .cam-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        /* ===== RING GAUGE ===== */
+        .ring-block { display: grid; justify-items: center; gap: 14px; text-align: center; }
+        .ring-wrap { position: relative; width: min(100%, var(--size, 200px)); aspect-ratio: 1 / 1; }
+        .ring-wrap svg { width: 100%; height: 100%; display: block; }
+        .ring-track { fill: none; stroke: var(--line); stroke-width: 6; }
+        .ring-bar { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round;
+            stroke-dasharray: 364.42; stroke-dashoffset: 364.42; transition: stroke-dashoffset .25s; }
+        .ring-tick { stroke: var(--muted); stroke-width: 2; stroke-linecap: round; }
+        .ring-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+        .ring-center .v { font-family: var(--mono); font-size: calc(var(--size, 200px) * .17); font-weight: 500; font-variant-numeric: tabular-nums; line-height: 1; }
+        .ring-center .l { margin-top: 6px; font-family: var(--mono); font-size: 10px; letter-spacing: .14em; color: var(--muted); }
+        .gesture-name {
+            font-family: var(--display); font-weight: 700;
+            font-size: clamp(34px, 6vw, 48px); line-height: 1.05; letter-spacing: -.02em;
+            word-break: break-word; text-transform: capitalize;
+        }
+        .ring-note { font-family: var(--mono); font-size: 11px; color: var(--muted); }
 
-        /* GESTURE */
-        .readout { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-        .gesture-name { font-size: 34px; font-weight: 700; letter-spacing: -0.01em; word-break: break-word; }
-        .confidence { color: var(--muted); font-size: 14px; }
-        .confidence b { color: var(--text); font-weight: 500; }
-        .progress { height: 3px; background: var(--line); margin-top: 12px; }
-        .progress-bar { height: 100%; width: 0%; background: var(--accent); transition: width .2s; }
-
-        /* D-PAD */
+        /* ===== D-PAD ===== */
         .dpad {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            gap: 8px;
-            max-width: 240px;
-            margin: 18px auto 6px;
-            aspect-ratio: 1 / 1;
+            display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+            gap: 10px; width: min(100%, 250px); aspect-ratio: 1 / 1; margin: 2px auto 18px;
         }
         .key {
-            display: grid;
-            place-items: center;
-            border: 1px solid #33404f;
-            border-radius: var(--radius);
-            color: #93a1b3;
-            font-size: 12px;
-            font-weight: 500;
-            transition: background .12s, color .12s, border-color .12s;
+            display: grid; place-items: center; align-content: center; gap: 2px;
+            border: 1px solid var(--line); border-radius: 16px; background: #f8fafb; color: var(--muted);
+            font-size: 13px; font-weight: 600; line-height: 1.2;
+            transition: background .15s, color .15s, border-color .15s;
         }
-        .key.active { background: var(--ice); border-color: var(--ice); color: var(--ink); }
-        .key.stop.active { background: var(--bad); border-color: var(--bad); color: #fff; }
-        .k-up { grid-area: 1 / 2; }
-        .k-left { grid-area: 2 / 1; }
-        .k-stop { grid-area: 2 / 2; }
-        .k-right { grid-area: 2 / 3; }
-        .k-down { grid-area: 3 / 2; }
+        .key i { font-style: normal; font-size: 20px; }
+        .key.active { background: var(--accent); border-color: var(--accent); color: #fff; animation: bump .35s cubic-bezier(.2, .8, .3, 1); }
+        .key.stop.active { background: var(--bad); border-color: var(--bad); }
+        .k-up { grid-area: 1 / 2; } .k-left { grid-area: 2 / 1; } .k-stop { grid-area: 2 / 2; }
+        .k-right { grid-area: 2 / 3; } .k-down { grid-area: 3 / 2; }
+        .last { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 18px; border-top: 1px solid var(--line); }
+        .command { font-family: var(--mono); font-size: 22px; font-weight: 500; color: var(--accent); }
 
-        .last { text-align: center; margin-top: 14px; }
-        .command { font-size: 22px; font-weight: 700; color: var(--ice); }
 
-        .bt-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+        /* ===== BLUETOOTH ===== */
+        .bt-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+        .kv { display: grid; gap: 0; }
+        .kv-row { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+        .kv-row:last-child { border-bottom: 0; }
+        .kv-row span:first-child { color: var(--muted); }
+        .kv-row span:last-child { font-family: var(--mono); font-size: 12px; text-align: right; overflow-wrap: anywhere; min-width: 0; }
+        .note { margin-top: 18px; padding: 14px 16px; border-radius: 12px; background: var(--accent-soft); font-size: 13px; color: #1d4f55; }
+        .note code { font-family: var(--mono); font-size: 12px; }
 
-        /* FOOTER */
-        .footer {
-            border-top: 1px solid var(--line);
-            margin-top: 32px;
-            padding-top: 18px;
-            color: var(--muted);
-            font-size: 13px;
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
+        /* ===== DOCK (glass) ===== */
+        .dock {
+            position: fixed; left: 0; right: 0; bottom: 18px; z-index: 25;
+            width: max-content; max-width: calc(100% - 32px); margin: 0 auto;
+            display: flex; align-items: center; gap: 16px;
+            padding: 8px 22px 8px 10px; border-radius: 999px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, .78), rgba(255, 255, 255, .42));
+            backdrop-filter: blur(20px) saturate(1.7);
+            -webkit-backdrop-filter: blur(20px) saturate(1.7);
+            border: 1px solid rgba(255, 255, 255, .8);
+            box-shadow: 0 22px 44px -18px rgba(14, 26, 43, .3), 0 2px 6px rgba(14, 26, 43, .05), inset 0 1px 0 rgba(255, 255, 255, .95);
+            color: var(--ink);
+            animation: pop .6s cubic-bezier(.2, .8, .3, 1) both .4s;
+        }
+        .dock .ring-wrap { flex: none; --size: 46px; width: 46px; border-radius: 50%; background: rgba(255, 255, 255, .6); }
+        .dock .ring-track { stroke: rgba(14, 26, 43, .1); }
+        .dock .ring-center .v { font-size: 11px; }
+        .dock .ring-center .l { display: none; }
+        .dock-txt { display: grid; line-height: 1.2; min-width: 0; }
+        .dock .k { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+        .dock .g { font-family: var(--display); font-weight: 700; font-size: 16px; text-transform: capitalize; letter-spacing: -.01em; }
+        .dock .sep { width: 1px; height: 26px; background: rgba(14, 26, 43, .12); flex: none; }
+        .dock .cmd {
+            display: inline-block; padding: 3px 11px; margin-top: 2px; width: max-content;
+            border-radius: 999px; background: var(--accent); color: #fff;
+            font-family: var(--mono); font-size: 12px; font-weight: 500; letter-spacing: .04em;
+        }
+        .dock-bt { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; white-space: nowrap; }
+
+        /* ===== POPUP & TOAST ===== */
+        .overlay {
+            position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px;
+            background: rgba(14, 26, 43, .38); backdrop-filter: blur(4px); animation: fade .2s ease both;
+        }
+        .dialog {
+            width: min(100%, 420px); background: var(--surface); border-radius: 20px; padding: 28px;
+            box-shadow: 0 34px 70px -22px rgba(14, 26, 43, .4);
+            animation: pop .45s cubic-bezier(.2, .8, .3, 1) both;
+        }
+        .dialog h3 { margin: 0 0 8px; font-family: var(--display); font-weight: 700; font-size: 24px; letter-spacing: -.02em; line-height: 1.15; }
+        .dialog p { margin: 0 0 22px; color: var(--muted); font-size: 14.5px; white-space: pre-line; overflow-wrap: anywhere; }
+        .dialog .row { display: flex; justify-content: flex-end; }
+
+        .toast-wrap { position: fixed; left: 0; right: 0; top: 84px; z-index: 55; display: flex; justify-content: center; padding: 0 16px; pointer-events: none; }
+        .toast {
+            display: inline-flex; align-items: center; gap: 10px; padding: 10px 18px; border-radius: 999px;
+            background: var(--surface); border: 1px solid var(--line); color: var(--ink); font-size: 13.5px; font-weight: 600;
+            box-shadow: 0 18px 36px -16px rgba(14, 26, 43, .35);
+            animation: pop .45s cubic-bezier(.2, .8, .3, 1) both;
         }
 
-        @media (max-width: 750px) {
-            .wrap { padding: 0 16px; }
-            .container { padding: 28px 16px 24px; }
-            .hero { padding: 36px 0 30px; }
-            .main-grid { grid-template-columns: 1fr; }
+        .footer { padding-block: 0 36px; color: var(--muted); font-size: 13px; }
+        .footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 18px; }
+
+        /* ===== ANIMASI TAMBAHAN ===== */
+        @keyframes rise { from { opacity: 0; transform: translateY(26px); filter: blur(10px); } to { opacity: 1; transform: none; filter: blur(0); } }
+        @keyframes shimmer { to { background-position: -250% 0; } }
+        @keyframes drift1 { from { transform: translate(0, 0) scale(1); } to { transform: translate(-90px, 70px) scale(1.2); } }
+        @keyframes drift2 { from { transform: translate(0, 0) scale(1); } to { transform: translate(110px, -60px) scale(1.15); } }
+        @keyframes drift3 { from { transform: translate(0, 0) scale(.9); } to { transform: translate(-60px, -80px) scale(1.25); } }
+        @keyframes halo { 0% { transform: scale(.92); opacity: .55; } 100% { transform: scale(1.28); opacity: 0; } }
+        @keyframes ripple { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(1.4); opacity: 0; } }
+        @keyframes radar { 0% { transform: scale(.8); opacity: .6; } 100% { transform: scale(2.6); opacity: 0; } }
+
+        .ambient { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+        .ambient span { position: absolute; border-radius: 50%; filter: blur(70px); }
+        .ambient .b1 { width: 440px; height: 440px; top: -140px; right: -90px; background: rgba(11, 123, 134, .26); animation: drift1 18s ease-in-out infinite alternate; }
+        .ambient .b2 { width: 400px; height: 400px; bottom: -150px; left: -110px; background: rgba(70, 150, 205, .22); animation: drift2 22s ease-in-out infinite alternate; }
+        .ambient .b3 { width: 280px; height: 280px; top: 42%; left: 46%; background: rgba(120, 210, 200, .22); animation: drift3 26s ease-in-out infinite alternate; }
+
+        .nav { position: relative; }
+        .nav-pill {
+            position: absolute; top: 0; left: 0; height: 100%; width: 0; z-index: 0; pointer-events: none;
+            border-radius: 14px; background: var(--accent-soft);
+            transition: transform .5s cubic-bezier(.3, 1.25, .5, 1), width .5s cubic-bezier(.3, 1.25, .5, 1);
+        }
+        .nav-pill.no-anim { transition: none; }
+        .nav-item { position: relative; z-index: 1; }
+
+        .hero > * { animation: rise .9s cubic-bezier(.2, .8, .3, 1) both; }
+        .hero > :nth-child(1) { animation-delay: .1s; }
+        .hero > :nth-child(2) { animation-delay: .22s; }
+        .hero > :nth-child(3) { animation-delay: .3s; }
+        .hero > :nth-child(4) { animation-delay: .4s; }
+        .hero h1 em {
+            background: linear-gradient(100deg, var(--accent) 35%, #55c4cf 50%, var(--accent) 65%);
+            background-size: 250% 100%;
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent; color: transparent;
+            animation: shimmer 5s linear infinite;
+        }
+
+        .card { transition: translate .25s, border-color .25s, box-shadow .25s; }
+        .card:hover { translate: 0 -3px; border-color: rgba(11, 123, 134, .3); box-shadow: 0 22px 40px -24px rgba(14, 26, 43, .25); }
+
+        .btn { position: relative; overflow: hidden; }
+        .btn.accent::after {
+            content: ""; position: absolute; top: 0; left: -70%; width: 40%; height: 100%;
+            background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .38), transparent);
+            transform: skewX(-20deg); transition: left .7s;
+        }
+        .btn.accent:hover::after { left: 130%; }
+
+        .ring-wrap::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--accent); opacity: 0; pointer-events: none; }
+        .ring-wrap.hit::after { animation: halo 1.6s ease-out infinite; }
+        .ring-wrap.hit .ring-bar { filter: drop-shadow(0 0 5px rgba(11, 123, 134, .5)); }
+
+        .key { position: relative; }
+        .key.active::after { content: ""; position: absolute; inset: 0; border-radius: inherit; border: 2px solid var(--accent); pointer-events: none; animation: ripple .7s ease-out; }
+        .key.stop.active::after { border-color: var(--bad); }
+
+        .placeholder { position: relative; }
+        .radar { position: absolute; top: 0; left: 50%; width: 46px; height: 46px; margin-left: -23px; pointer-events: none; }
+        .radar::before, .radar::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid var(--accent); animation: radar 2.6s ease-out infinite; }
+        .radar::after { animation-delay: 1.3s; }
+
+        /* ===== RESPONSIF ===== */
+        @media (max-width: 960px) {
+            .header-inner { flex-wrap: wrap; row-gap: 10px; }
+            .nav { width: 100%; }
+            .nav-item { flex: 1; justify-content: center; padding: 8px 6px; }
+            .nav-txt { display: none; }
+            .brand-text span { display: none; }
+            .two, .two.even { grid-template-columns: 1fr; }
+            .desc-grid { grid-template-columns: 1fr; }
+            main { padding-block: 28px 110px; }
+        }
+        @media (max-width: 560px) {
+            .wrap { padding-inline: 16px; }
+            .card { padding: 20px; }
             .input-group { flex-direction: column; }
+            .dock { gap: 10px; padding: 7px 14px 7px 8px; }
+            .dock .k { display: none; }
+            .dock .ring-wrap { --size: 40px; width: 40px; }
+            .dock .g { font-size: 14px; }
+            .dock .sep:nth-of-type(2), .dock-bt span[data-chip] { display: none; }
+            .toast-wrap { top: 130px; }
         }
-
         @media (prefers-reduced-motion: reduce) {
-            * { transition: none !important; }
+            *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition: none !important; }
         }
     </style>
 </head>
 
 <body>
 
-    <!-- HEADER -->
-    <header class="hero">
-        <div class="wrap">
-            <h1>Hand Gesture Controller</h1>
-            <div class="author">Zikri-Fadhil-Aban</div>
-            <div class="subtitle">Teachable Machine, kamera, Bluetooth, lalu micro:bit</div>
+    <div class="ambient" aria-hidden="true"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div>
+
+    <!-- ===== HEADER + WIDGET NAVIGASI ===== -->
+    <header class="header">
+        <div class="wrap header-inner">
+            <button class="brand" onclick="go('home')" aria-label="Ke beranda">
+                <div class="mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V11m0-1.5v-2a1.5 1.5 0 0 1 3 0V11m0-2.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-.5a5 5 0 0 1-4-2l-3-4.2a1.6 1.6 0 0 1 2.4-2L8 15"/></svg>
+                </div>
+                <div class="brand-text">
+                    <b>Gesture Controller</b>
+                    <span>Zikri-Fadhil-Aban</span>
+                </div>
+            </button>
+
+            <nav class="nav" aria-label="Halaman">
+                <span class="nav-pill" id="navPill" aria-hidden="true"></span>
+                <button class="nav-item" data-page="home" onclick="go('home')">
+                    <span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg></span>
+                    <span class="nav-txt"><span class="nav-label">Beranda</span></span>
+                </button>
+                <button class="nav-item" data-page="model" onclick="go('model')">
+                    <span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg></span>
+                    <span class="nav-txt"><span class="nav-label">Model</span><span class="nav-sub"><span class="dot" data-chipdot="Model"></span><span data-chip="Model">belum dimuat</span></span></span>
+                </button>
+                <button class="nav-item" data-page="camera" onclick="go('camera')">
+                    <span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.2a1 1 0 0 0 .8-.4l.7-1.2a1 1 0 0 1 .9-.4h3.8a1 1 0 0 1 .9.4l.7 1.2a1 1 0 0 0 .8.4h1.2A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.2"/></svg></span>
+                    <span class="nav-txt"><span class="nav-label">Kamera</span><span class="nav-sub"><span class="dot" data-chipdot="Camera"></span><span data-chip="Camera">mati</span></span></span>
+                </button>
+                <button class="nav-item" data-page="bluetooth" onclick="go('bluetooth')">
+                    <span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M7 7l10 10-5 5V2l5 5L7 17"/></svg></span>
+                    <span class="nav-txt"><span class="nav-label">Bluetooth</span><span class="nav-sub"><span class="dot" data-chipdot="Bluetooth"></span><span data-chip="Bluetooth">terputus</span></span></span>
+                </button>
+            </nav>
         </div>
     </header>
 
-    <div class="container">
+    <main class="wrap">
 
-        <!-- DESKRIPSI PROJECT -->
-        <section class="description">
-            <h2>Deskripsi Project</h2>
-            <p>
-                Proyek Sistem Pengenalan Isyarat Tangan (<i>Hand Gesture Recognition</i>) ini bertujuan
-                mengembangkan model <i>Machine Learning</i> dan visi komputer yang mampu mendeteksi, melacak,
-                dan mengklasifikasikan gerakan tangan manusia secara <i>real-time</i>.
-            </p>
-            <p>
-                Dengan mengekstraksi titik acuan tangan (<i>hand landmarks</i>) melalui tangkapan kamera
-                standar, sistem ini secara presisi menerjemahkan gestur fisik menjadi perintah digital tanpa
-                memerlukan perangkat fisik atau layar sentuh.
-            </p>
-            <p>
-                Proyek ini membuka peluang inovasi interaksi manusia-komputer yang lebih intuitif dan higienis
-                (<i>touchless</i>), dengan potensi implementasi yang luas mencakup pengendalian perangkat rumah
-                pintar (<i>smart home</i>), navigasi presentasi nirkabel, interaksi <i>Virtual Reality</i> (VR),
-                hingga teknologi asisten penerjemah bahasa isyarat.
-            </p>
-        </section>
+        <!-- ===== BERANDA ===== -->
+        <section id="page-home" class="view" hidden>
 
-        <div class="stack">
-
-            <!-- TEACHABLE MACHINE -->
-            <section class="card">
-                <h2>Model Teachable Machine</h2>
-                <p class="info">Paste link model Teachable Machine kamu di bawah.</p>
-
-                <div class="input-group">
-                    <input id="modelUrl" type="text" placeholder="https://teachablemachine.withgoogle.com/models/...">
-                    <button onclick="loadModel()">Load Model</button>
+            <div class="hero">
+                <h1>Hand Gesture <em>Controller</em></h1>
+                <div class="author">Zikri-Fadhil-Aban</div>
+                <div class="subtitle">Teachable Machine, kamera, Bluetooth, lalu micro:bit</div>
+                <div class="cta">
+                    <button class="btn accent" onclick="go('model')">Mulai</button>
+                    <button class="btn ghost" onclick="go('camera')">Buka Kamera</button>
                 </div>
+            </div>
 
-                <div id="modelStatus" class="status">
-                    <span class="dot"></span>
-                    Model belum dimuat
+            <section class="card pop" style="--d:.15s">
+                <div class="card-head">
+                    <h3>Deskripsi Project</h3>
+                </div>
+                <div class="desc-grid">
+                    <p>
+                        Proyek Sistem Pengenalan Isyarat Tangan (<i>Hand Gesture Recognition</i>) ini bertujuan
+                        mengembangkan model <i>Machine Learning</i> dan visi komputer yang mampu mendeteksi, melacak,
+                        dan mengklasifikasikan gerakan tangan manusia secara <i>real-time</i>.
+                    </p>
+                    <p>
+                        Dengan mengekstraksi titik acuan tangan (<i>hand landmarks</i>) melalui tangkapan kamera
+                        standar, sistem ini secara presisi menerjemahkan gestur fisik menjadi perintah digital tanpa
+                        memerlukan perangkat fisik atau layar sentuh.
+                    </p>
+                    <p>
+                        Proyek ini membuka peluang inovasi interaksi manusia-komputer yang lebih intuitif dan higienis
+                        (<i>touchless</i>), dengan potensi implementasi yang luas mencakup pengendalian perangkat rumah
+                        pintar (<i>smart home</i>), navigasi presentasi nirkabel, interaksi <i>Virtual Reality</i> (VR),
+                        hingga teknologi asisten penerjemah bahasa isyarat.
+                    </p>
                 </div>
             </section>
+        </section>
 
-            <!-- KAMERA + BLUETOOTH -->
-            <div class="main-grid">
 
-                <!-- KAMERA -->
-                <section class="card">
-                    <h2>Kamera</h2>
+        <!-- ===== MODEL ===== -->
+        <section id="page-model" class="view" hidden>
+            <div class="view-head pop" style="--d:0s">
+                <span class="eyebrow">Model</span>
+                <h2>Teachable Machine</h2>
+                <p>Paste link model Teachable Machine kamu, lalu cocokkan nama gesture dengan command robot.</p>
+            </div>
 
-                    <div class="viewport">
-                        <span class="c1"></span><span class="c2"></span>
-                        <div id="webcam-container">
-                            <p class="info">Kamera belum aktif</p>
-                        </div>
+            <div class="two even">
+                <section class="card pop" style="--d:.08s">
+                    <div class="card-head">
+                        <h3>Link Model</h3>
+                        <span class="tag">tmImage</span>
                     </div>
-
-                    <div class="cam-actions">
-                        <button onclick="startCamera()">Start Camera</button>
-                        <span class="info">Gesture terdeteksi</span>
+                    <div class="input-group">
+                        <input id="modelUrl" type="text" placeholder="https://teachablemachine.withgoogle.com/models/...">
+                        <button class="btn accent" onclick="loadModel()">Load Model</button>
                     </div>
-
-                    <div style="margin-top:18px">
-                        <div class="readout">
-                            <div id="gestureName" class="gesture-name">---</div>
-                            <div class="confidence">Confidence <b id="confidence">0%</b></div>
-                        </div>
-                        <div class="progress">
-                            <div id="confidenceBar" class="progress-bar"></div>
-                        </div>
+                    <div id="modelStatus" class="status">
+                        <span class="dot"></span>
+                        Model belum dimuat
                     </div>
                 </section>
 
-                <!-- COMMAND + BLUETOOTH -->
-                <div class="stack" style="align-content:start">
+                <section class="card pop" style="--d:.16s">
+                    <div class="card-head">
+                        <h3>Pemetaan Gesture</h3>
+                        <span class="tag">gesture &rarr; command</span>
+                    </div>
+                    <div id="mapList" class="map"></div>
+                    <p id="mapExtra" class="extra" hidden></p>
+                </section>
+            </div>
+        </section>
 
-                    <section class="card dark">
-                        <h2>Robot Command</h2>
+
+        <!-- ===== KAMERA ===== -->
+        <section id="page-camera" class="view" hidden>
+            <div class="view-head pop" style="--d:0s">
+                <span class="eyebrow">Kamera</span>
+                <h2>Kamera dan Arah</h2>
+                <p>Arahkan tangan ke tengah bingkai. Tombol arah menyala setiap gesture terdeteksi, dan kamera tetap berjalan saat pindah halaman.</p>
+            </div>
+
+            <div class="two">
+                <section class="card pop" style="--d:.08s">
+                    <div id="viewport" class="viewport">
+                        <span class="live-badge">LIVE</span>
+                        <div id="webcam-container">
+                            <div class="placeholder">
+                                <span class="radar"></span>
+                                <svg viewBox="0 0 24 24"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.2a1 1 0 0 0 .8-.4l.7-1.2a1 1 0 0 1 .9-.4h3.8a1 1 0 0 1 .9.4l.7 1.2a1 1 0 0 0 .8.4h1.2A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.2"/></svg>
+                                <p class="info">Kamera belum aktif</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cam-actions">
+                        <button class="btn accent" onclick="startCamera()">Start Camera</button>
+                        <span class="info">Butuh model dan izin kamera</span>
+                    </div>
+                </section>
+
+                <div class="stack">
+                <section class="card pop" style="--d:.16s">
+                        <div class="card-head">
+                            <h3>Gesture Terdeteksi</h3>
+                            <span class="tag">confidence</span>
+                        </div>
+                        <div class="ring-block">
+                            <div class="ring-wrap" style="--size:170px">
+                                <svg viewBox="0 0 140 140" aria-hidden="true">
+                                    <circle class="ring-track" cx="70" cy="70" r="58"/>
+                                    <circle class="ring-bar js-ring" cx="70" cy="70" r="58" transform="rotate(-90 70 70)"/>
+                                    <line class="ring-tick" x1="70" y1="2" x2="70" y2="12" transform="rotate(288 70 70)"/>
+                                </svg>
+                                <div class="ring-center"><span class="v js-conf">0%</span><span class="l">CONF</span></div>
+                            </div>
+                            <div class="gesture-name js-gesture">---</div>
+                            <div class="ring-note">Garis kecil di cincin menandai batas minimum 80%</div>
+                        </div>
+                    </section>
+                <section class="card pop" style="--d:.24s">
+                        <div class="card-head">
+                            <h3>Arah</h3>
+                            <span class="tag">live</span>
+                        </div>
                         <div class="dpad" aria-hidden="true">
-                            <div class="key k-up" data-cmd="MAJU">Maju</div>
-                            <div class="key k-left" data-cmd="KIRI">Kiri</div>
+                            <div class="key k-up" data-cmd="MAJU"><i>&uarr;</i>Maju</div>
+                            <div class="key k-left" data-cmd="KIRI"><i>&larr;</i>Kiri</div>
                             <div class="key k-stop stop" data-cmd="STOP">Stop</div>
-                            <div class="key k-right" data-cmd="KANAN">Kanan</div>
-                            <div class="key k-down" data-cmd="MUNDUR">Mundur</div>
+                            <div class="key k-right" data-cmd="KANAN"><i>&rarr;</i>Kanan</div>
+                            <div class="key k-down" data-cmd="MUNDUR"><i>&darr;</i>Mundur</div>
                         </div>
                         <div class="last">
-                            <div class="info">Command terakhir</div>
-                            <div id="lastCommand" class="command">---</div>
+                            <span class="info">Command terakhir</span>
+                            <span class="command js-command">---</span>
                         </div>
                     </section>
-
-                    <section class="card">
-                        <h2>micro:bit Bluetooth</h2>
-
-                        <div id="bluetoothStatus" class="status">
-                            <span class="dot"></span>
-                            Belum terhubung
-                        </div>
-
-                        <div class="bt-actions">
-                            <button onclick="connectBluetooth()">Connect micro:bit</button>
-                            <button class="btn-quiet" onclick="disconnectBluetooth()">Disconnect</button>
-                        </div>
-
-                        <p class="info" style="margin-top:14px">
-                            Gunakan Chrome atau Edge. micro:bit harus menjalankan Bluetooth UART Service.
-                        </p>
-                    </section>
-
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- FOOTER -->
-        <footer class="footer">
+
+        <!-- ===== BLUETOOTH ===== -->
+        <section id="page-bluetooth" class="view" hidden>
+            <div class="view-head pop" style="--d:0s">
+                <span class="eyebrow">Bluetooth</span>
+                <h2>micro:bit Bluetooth</h2>
+                <p>Hubungkan micro:bit lewat Web Bluetooth. Command tetap tampil walau belum terhubung.</p>
+            </div>
+
+            <div class="two even">
+                <section class="card pop" style="--d:.08s">
+                    <div class="card-head">
+                        <h3>Koneksi</h3>
+                        <span class="tag">web bluetooth</span>
+                    </div>
+                    <div id="bluetoothStatus" class="status" style="margin-top:0">
+                        <span class="dot"></span>
+                        Belum terhubung
+                    </div>
+                    <div class="bt-actions">
+                        <button class="btn accent" onclick="connectBluetooth()">Connect micro:bit</button>
+                        <button class="btn ghost" onclick="disconnectBluetooth()">Disconnect</button>
+                    </div>
+                    <p class="note">
+                        Gunakan Chrome atau Edge. micro:bit harus menjalankan <code>Bluetooth UART Service</code>.
+                    </p>
+                </section>
+
+                <section class="card pop" style="--d:.16s">
+                    <div class="card-head">
+                        <h3>Protokol</h3>
+                        <span class="tag">uart</span>
+                    </div>
+                    <div class="kv">
+                        <div class="kv-row"><span>Perangkat</span><span id="btDevice">belum ada</span></div>
+                        <div class="kv-row"><span>Service</span><span>6e400001-b5a3-f393-e0a9-e50e24dcca9e</span></div>
+                        <div class="kv-row"><span>Command</span><span>MAJU, MUNDUR, KIRI, KANAN, STOP</span></div>
+                        <div class="kv-row"><span>Format</span><span>teks + baris baru</span></div>
+                    </div>
+                </section>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer">
+        <div class="wrap">
             <span>Hand Gesture Bluetooth Controller</span>
             <span>Developed by <b>Muhamad Rizal Akmal</b></span>
-        </footer>
+        </div>
+    </footer>
 
+    <!-- DOCK: sinyal live di semua halaman -->
+    <div id="dock" class="dock" hidden>
+        <div class="ring-wrap" aria-hidden="true">
+            <svg viewBox="0 0 140 140">
+                <circle class="ring-track" cx="70" cy="70" r="58"/>
+                <circle class="ring-bar js-ring" cx="70" cy="70" r="58" transform="rotate(-90 70 70)"/>
+            </svg>
+            <div class="ring-center"><span class="v js-conf">0%</span></div>
+        </div>
+        <div class="dock-txt"><span class="k">Gesture</span><span class="g js-gesture">---</span></div>
+        <span class="sep"></span>
+        <div class="dock-txt"><span class="k">Command</span><span class="cmd js-command">---</span></div>
+        <span class="sep"></span>
+        <div class="dock-bt"><span class="dot" data-chipdot="Bluetooth"></span><span data-chip="Bluetooth">terputus</span></div>
     </div>
+
+    <!-- POPUP -->
+    <div id="popup" class="overlay" hidden>
+        <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="popupTitle">
+            <h3 id="popupTitle"></h3>
+            <p id="popupMessage"></p>
+            <div class="row">
+                <button id="popupClose" class="btn" onclick="closePopup()">Mengerti</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toastWrap" class="toast-wrap" aria-live="polite"></div>
 
 
     <script>
@@ -403,6 +720,9 @@
         let uartCharacteristic = null;
         let lastCommand = "";
         let lastCommandTime = 0;
+        let lastGestureShown = "";
+
+        const RING_LENGTH = 364.42;
 
 
         /* ==============================
@@ -415,8 +735,133 @@
 
 
         /* ==============================
+           NAVIGASI HALAMAN
+        ============================== */
+
+        const PAGES = ["home", "model", "camera", "bluetooth"];
+
+        function showPage(name) {
+
+            if (!PAGES.includes(name)) {
+                name = "home";
+            }
+
+            document.querySelectorAll(".view").forEach(view => {
+                view.hidden = view.id !== "page-" + name;
+            });
+
+            document.querySelectorAll(".nav-item").forEach(item => {
+                const active = item.dataset.page === name;
+                item.classList.toggle("active", active);
+                item.setAttribute("aria-current", active ? "page" : "false");
+            });
+
+            /* Dock disembunyikan di halaman kamera karena sudah ada pembacaan besar */
+            document.getElementById("dock").hidden = name === "camera";
+
+            movePill();
+
+            window.scrollTo({ top: 0 });
+        }
+
+        let pillReady = false;
+
+        function movePill() {
+
+            const pill = document.getElementById("navPill");
+            const active = document.querySelector(".nav-item.active");
+
+            if (!pill || !active) {
+                return;
+            }
+
+            if (!pillReady) {
+                pill.classList.add("no-anim");
+            }
+
+            pill.style.width = active.offsetWidth + "px";
+            pill.style.transform = "translateX(" + active.offsetLeft + "px)";
+
+            if (!pillReady) {
+                pillReady = true;
+                requestAnimationFrame(() => requestAnimationFrame(() => pill.classList.remove("no-anim")));
+            }
+        }
+
+        window.addEventListener("resize", () => { pillReady = true; movePill(); });
+
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(() => { pillReady = true; movePill(); });
+        }
+
+        function go(name) {
+            if (location.hash.slice(1) === name) {
+                showPage(name);
+                return;
+            }
+            location.hash = name;
+        }
+
+        window.addEventListener("hashchange", function () {
+            showPage(location.hash.slice(1));
+        });
+
+
+        /* ==============================
+           POPUP & TOAST
+        ============================== */
+
+        function showPopup(title, message) {
+            document.getElementById("popupTitle").textContent = title;
+            document.getElementById("popupMessage").textContent = message;
+            document.getElementById("popup").hidden = false;
+            document.getElementById("popupClose").focus();
+        }
+
+        function closePopup() {
+            document.getElementById("popup").hidden = true;
+        }
+
+        document.getElementById("popup").addEventListener("click", function (event) {
+            if (event.target === this) closePopup();
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") closePopup();
+        });
+
+        function showToast(text, type = "") {
+            const wrap = document.getElementById("toastWrap");
+            const toast = document.createElement("div");
+            toast.className = "toast";
+
+            const dotClass = type === "success" ? "green" : type === "error" ? "red" : "";
+            toast.innerHTML = `<span class="dot ${dotClass}"></span>`;
+            toast.appendChild(document.createTextNode(text));
+
+            wrap.innerHTML = "";
+            wrap.appendChild(toast);
+
+            setTimeout(() => {
+                if (toast.parentNode) toast.remove();
+            }, 2600);
+        }
+
+
+        /* ==============================
            STATUS
         ============================== */
+
+        function setChip(name, text, type = "") {
+
+            document.querySelectorAll('[data-chip="' + name + '"]').forEach(el => {
+                el.textContent = text;
+            });
+
+            document.querySelectorAll('[data-chipdot="' + name + '"]').forEach(el => {
+                el.className = "dot" + (type === "success" ? " green" : type === "error" ? " red" : "");
+            });
+        }
 
         function setStatus(elementId, text, type = "") {
 
@@ -434,6 +879,41 @@
 
 
         /* ==============================
+           PEMBACAAN GESTURE (RING)
+        ============================== */
+
+        function updateReadout(gestureName, percentage) {
+
+            document.querySelectorAll(".js-gesture").forEach(el => {
+                el.textContent = gestureName;
+            });
+
+            document.querySelectorAll(".js-conf").forEach(el => {
+                el.textContent = percentage + "%";
+            });
+
+            document.querySelectorAll(".js-ring").forEach(el => {
+                el.style.strokeDashoffset = RING_LENGTH * (1 - percentage / 100);
+            });
+
+            document.querySelectorAll(".ring-wrap").forEach(el => {
+                el.classList.toggle("hit", percentage >= 80);
+            });
+
+            if (gestureName !== lastGestureShown) {
+
+                lastGestureShown = gestureName;
+
+                document.querySelectorAll(".gesture-name.js-gesture").forEach(el => {
+                    el.classList.remove("bump");
+                    void el.offsetWidth;
+                    el.classList.add("bump");
+                });
+            }
+        }
+
+
+        /* ==============================
            HIGHLIGHT D-PAD
         ============================== */
 
@@ -441,6 +921,71 @@
             document.querySelectorAll(".key").forEach(key => {
                 key.classList.toggle("active", key.dataset.cmd === command);
             });
+        }
+
+
+        /* ==============================
+           PEMETAAN GESTURE
+        ============================== */
+
+        function getMappings() {
+
+            return [
+                { gesture: "maju", command: "MAJU" },
+                { gesture: "mundur", command: "MUNDUR" },
+                { gesture: "kiri", command: "KIRI" },
+                { gesture: "kanan", command: "KANAN" },
+                { gesture: "stop", command: "STOP" }
+            ];
+        }
+
+        function renderMapping(labels) {
+
+            const list = document.getElementById("mapList");
+            const extra = document.getElementById("mapExtra");
+
+            const normalized = labels
+                ? labels.map(label => String(label).trim().toLowerCase())
+                : null;
+
+            list.innerHTML = "";
+
+            getMappings().forEach(item => {
+
+                const row = document.createElement("div");
+                row.className = "map-row";
+
+                let state = "menunggu";
+
+                if (normalized) {
+                    const found = normalized.includes(item.gesture);
+                    row.classList.add(found ? "found" : "missing");
+                    state = found ? "ada di model" : "tidak ada";
+                }
+
+                row.innerHTML = `
+                    <span class="g">${item.gesture}</span>
+                    <span class="c">${item.command}</span>
+                    <span class="m">${state}</span>
+                `;
+
+                list.appendChild(row);
+            });
+
+            if (normalized) {
+
+                const known = getMappings().map(item => item.gesture);
+                const others = labels.filter(
+                    label => !known.includes(String(label).trim().toLowerCase())
+                );
+
+                if (others.length) {
+                    extra.textContent = "Class lain di model (dikirim sebagai teks huruf besar): " + others.join(", ");
+                    extra.hidden = false;
+                } else {
+                    extra.hidden = true;
+                }
+            }
         }
 
 
@@ -454,18 +999,19 @@
             let url = input.value.trim();
 
             if (!url) {
-                alert("Masukkan link Teachable Machine terlebih dahulu.");
+                showPopup("Link belum diisi", "Masukkan link Teachable Machine terlebih dahulu.");
                 return;
             }
 
             if (!url.includes("teachablemachine.withgoogle.com/models/")) {
-                alert("Link harus berupa link model Teachable Machine.");
+                showPopup("Link tidak sesuai", "Link harus berupa link model Teachable Machine.");
                 return;
             }
 
             try {
 
                 setStatus("modelStatus", "Memuat model...");
+                setChip("Model", "memuat...");
 
                 if (!url.endsWith("/")) {
                     url += "/";
@@ -483,6 +1029,14 @@
                     "Model siap - " + classCount + " gesture",
                     "success"
                 );
+                setChip("Model", classCount + " gesture", "success");
+                showToast("Model siap dipakai", "success");
+
+                try {
+                    renderMapping(model.getClassLabels());
+                } catch (labelError) {
+                    console.error(labelError);
+                }
 
                 console.log("Jumlah class:", classCount);
 
@@ -491,8 +1045,9 @@
                 console.error(error);
 
                 setStatus("modelStatus", "Gagal memuat model", "error");
+                setChip("Model", "gagal", "error");
 
-                alert("Model gagal dimuat.\n\n" + error.message);
+                showPopup("Model gagal dimuat", error.message);
             }
         }
 
@@ -504,7 +1059,7 @@
         async function startCamera() {
 
             if (!model) {
-                alert("Load model Teachable Machine terlebih dahulu.");
+                showPopup("Model belum dimuat", "Load model Teachable Machine terlebih dahulu.");
                 return;
             }
 
@@ -524,7 +1079,12 @@
                 container.innerHTML = "";
                 container.appendChild(webcam.canvas);
 
+                document.getElementById("viewport").classList.add("live");
+
                 cameraRunning = true;
+
+                setChip("Camera", "aktif", "success");
+                showToast("Kamera aktif", "success");
 
                 requestAnimationFrame(predictionLoop);
 
@@ -532,8 +1092,11 @@
 
                 console.error(error);
 
-                alert(
-                    "Kamera tidak dapat dibuka.\n\n" +
+                webcam = null;
+                setChip("Camera", "gagal", "error");
+
+                showPopup(
+                    "Kamera tidak dapat dibuka",
                     "Pastikan browser memiliki izin kamera."
                 );
             }
@@ -555,22 +1118,6 @@
             await predict();
 
             requestAnimationFrame(predictionLoop);
-        }
-
-
-        /* ==============================
-           MAPPING GESTURE
-        ============================== */
-
-        function getMappings() {
-
-            return [
-                { gesture: "maju", command: "MAJU" },
-                { gesture: "mundur", command: "MUNDUR" },
-                { gesture: "kiri", command: "KIRI" },
-                { gesture: "kanan", command: "KANAN" },
-                { gesture: "stop", command: "STOP" }
-            ];
         }
 
 
@@ -598,9 +1145,7 @@
             const probability = bestPrediction.probability;
             const percentage = Math.round(probability * 100);
 
-            document.getElementById("gestureName").textContent = gestureName;
-            document.getElementById("confidence").textContent = percentage + "%";
-            document.getElementById("confidenceBar").style.width = percentage + "%";
+            updateReadout(gestureName, percentage);
 
 
             /* Confidence minimum 80% */
@@ -638,9 +1183,9 @@
         async function connectBluetooth() {
 
             if (!navigator.bluetooth) {
-                alert(
-                    "Browser tidak mendukung Web Bluetooth.\n\n" +
-                    "Gunakan Google Chrome atau Microsoft Edge."
+                showPopup(
+                    "Bluetooth tidak didukung",
+                    "Browser tidak mendukung Web Bluetooth.\n\nGunakan Google Chrome atau Microsoft Edge."
                 );
                 return;
             }
@@ -669,17 +1214,19 @@
 
                 uartCharacteristic = await service.getCharacteristic(UART_RX);
 
-                setStatus(
-                    "bluetoothStatus",
-                    "Terhubung: " + (bluetoothDevice.name || "micro:bit"),
-                    "success"
-                );
+                const deviceName = bluetoothDevice.name || "micro:bit";
+
+                setStatus("bluetoothStatus", "Terhubung: " + deviceName, "success");
+                setChip("Bluetooth", "terhubung", "success");
+                document.getElementById("btDevice").textContent = deviceName;
+                showToast("Terhubung ke " + deviceName, "success");
 
             } catch (error) {
 
                 console.error(error);
 
                 setStatus("bluetoothStatus", "Gagal terhubung", "error");
+                setChip("Bluetooth", "gagal", "error");
             }
         }
 
@@ -693,6 +1240,9 @@
             uartCharacteristic = null;
 
             setStatus("bluetoothStatus", "Bluetooth terputus", "error");
+            setChip("Bluetooth", "terputus", "error");
+            document.getElementById("btDevice").textContent = "belum ada";
+            showToast("Bluetooth terputus", "error");
         }
 
 
@@ -702,7 +1252,15 @@
 
         async function sendCommand(command) {
 
-            document.getElementById("lastCommand").textContent = command;
+            document.querySelectorAll(".js-command").forEach(el => {
+                el.textContent = command;
+            });
+
+            document.querySelectorAll(".dock .cmd").forEach(el => {
+                el.classList.remove("bump");
+                void el.offsetWidth;
+                el.classList.add("bump");
+            });
 
             highlightKey(command);
 
@@ -757,7 +1315,17 @@
             bluetoothDevice = null;
 
             setStatus("bluetoothStatus", "Belum terhubung");
+            setChip("Bluetooth", "terputus");
+            document.getElementById("btDevice").textContent = "belum ada";
         }
+
+
+        /* ==============================
+           INISIALISASI
+        ============================== */
+
+        renderMapping(null);
+        showPage(location.hash.slice(1));
 
     </script>
 
